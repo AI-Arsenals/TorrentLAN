@@ -2,72 +2,60 @@ import socket
 import os
 import json
 import subprocess
+import platform
 
 CONFIG_IDENTITY = "configs/identity.json"
+CONFIG_CLIENT = "configs/client(c-s).json"
 OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
-DBS_LOCATION = "./data/.other_clients_db"
+DBS_LOCATION = "./data/.db"+OWN_UNIQUE_ID
 
-PORT = 8888
+PORT = 8293
 
-def request_database(client_unique_id,ip,modified_time):
-    modified_time=float(modified_time)
+def update_server(unique_id,ip):
     try:
+        # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((ip, PORT))
-            s.sendall("Send".encode())
-
-            # Receive the file
-            file_data = b""
-            while True:
-                data = s.recv(1024)
-                if not data:
-                    break
-                file_data += data
-
-            # Save the received file data
-            with open(os.path.join(DBS_LOCATION, client_unique_id+".db"), 'wb') as file:
-                file.write(file_data)
-            
-            # Change the modified time of the file
-            os.utime(os.path.join(DBS_LOCATION, client_unique_id+".db"), (modified_time, modified_time))
-
-            print("Database from ",client_unique_id,"Recieved")
-            s.close()
+            js_data={}
+            js_data[unique_id]=os.stat(DBS_LOCATION).st_mtime
+            with open(DBS_LOCATION,"rb") as f:
+                js_data["db_data"]=f.read()
 
     except ConnectionRefusedError:
-        print("Client is not up")
+        print("Server is down")
+        return False
 
-def check_updation(client_unique_id,ip):
+def get_ip_address(address):
     try:
-        # Connect to clients
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((ip, PORT))
-            s.sendall("Update".encode())
-            
-            # Receive response from server
-            data = s.recv(1024)
-            print(data.decode())
-            # if os.path.exists(os.path.join(DBS_LOCATION,client_unique_id+".db")) and data.decode()==str(os.stat(os.path.join(DBS_LOCATION, client_unique_id+".db")).st_mtime):
-            #     print(f"{client_unique_id} is Up to date")
-            #     s.close()
-            # else:
-            #     print(f"{client_unique_id} is Not up to date")
-            #     s.close()
-            #     request_database(client_unique_id,ip,data.decode())
-    except ConnectionRefusedError:
-        print("Client is not up")
+        ip_address = socket.gethostbyname(address)
+        return ip_address
+    except socket.gaierror:
+        return None
 
-def target_ip():
-    cmd = "ip route show"
-    output = subprocess.check_output(cmd, shell=True).decode()
+def check_updation(ip):
+    mtime=os.stat(DBS_LOCATION).st_mtime
 
-    if "default via" in output:
-        if "eth" in output:
-            return "10.10.11.31"  # LAN route
-        else:
-            return "172.16.100.15"  # WIFI route
-    return "B"
+    if not (os.path.exists(CONFIG_CLIENT)):
+        with open(CONFIG_CLIENT, 'w') as f:
+            json.dump({"Last_Sent":mtime}, f)
+            success=update_server(OWN_UNIQUE_ID,ip)
+            if success:
+                with open(CONFIG_CLIENT, 'w') as f:
+                    json.dump({"Last_Sent":mtime}, f)
+            else:   
+                os.remove(CONFIG_CLIENT)
+
+    else:
+        with open(CONFIG_CLIENT, 'r') as f:
+            data=json.load(f)
+            if data["Last_Sent"]!=mtime:
+                success=update_server(OWN_UNIQUE_ID,ip)
+                if success:
+                    with open(CONFIG_CLIENT, 'w') as f:
+                        json.dump({"Last_Sent":mtime}, f)
 
 
 if __name__ == '__main__':
-    check_updation('5e7350ca-5dd7-40df-9ea5-b2ece85bc4da',target_ip())
+    ip=get_ip_address('home.iitj.ac.in')
+    # print(ip)
+    check_updation(ip)

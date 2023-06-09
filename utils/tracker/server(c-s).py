@@ -5,7 +5,7 @@ import os
 import json
 
 HOST = ''
-PORT = 8888
+PORT = 8293
 
 DB_LOCATION = "./data/.db"
 
@@ -17,16 +17,11 @@ def handle_client(conn, addr):
             if not data:
                 break
 
-            if data == "Update":
-                js_data={}
-                for i in os.listdir(DB_LOCATION):
-                    js_data[i]=os.stat(os.path.join(DB_LOCATION,i)).st_mtime
-                conn.sendall(str(js_data))
-            elif data == "Send":
-                with open(DB_LOCATION, 'rb') as file:
-                    file_data = file.read()
-                conn.sendall(file_data)
-            break
+            js_data=data.decode()
+            unique_id=js_data["unique_id"]
+            db_data=js_data["db_data"]
+            with open(os.path.join(DB_LOCATION,unique_id+".db"),"wb") as f:
+                f.write(db_data)
         except socket.error:
             print ("Connection with", addr, "closed")
             break
@@ -35,8 +30,8 @@ def handle_client(conn, addr):
 def start_server():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((HOST, PORT))
-    s.listen(5)
-    print "Listening on", HOST + ":" + str(PORT) + "..."
+    s.listen(250)
+    print ("Listening on", HOST + ":" + str(PORT) + "...")
     while True:
         conn, addr = s.accept()
 
