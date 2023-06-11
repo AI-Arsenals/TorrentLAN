@@ -4,7 +4,7 @@ import os
 import json
 
 HOST = 'localhost'
-PORT = 8888
+PORT = 8889
 
 DB_LOCATION = "./data/.db/file_tree.db"
 

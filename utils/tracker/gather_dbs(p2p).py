@@ -7,7 +7,7 @@ CONFIG_IDENTITY = "configs/identity.json"
 OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 DBS_LOCATION = "./data/.other_clients_db"
 
-PORT = 8888
+PORT = 8889
 
 def request_database(client_unique_id,ip,modified_time):
     modified_time=float(modified_time)
