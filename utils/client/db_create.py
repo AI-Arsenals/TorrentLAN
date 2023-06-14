@@ -240,7 +240,7 @@ def main():
         update_date = datetime.datetime.strptime(value["update_date"], "%Y-%m-%d %H:%M:%S.%f")
         current_time = datetime.datetime.now()
         elapsed_time = current_time - update_date
-        if elapsed_time.total_seconds() >= 24 * 60 * 60 or False: 
+        if elapsed_time.total_seconds() <= 24 * 60 * 60 or False: 
             continue
         path = value["path"]
         name = key
