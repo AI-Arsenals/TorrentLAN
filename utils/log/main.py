@@ -1,44 +1,59 @@
 import datetime
-import inspect
 import os
 import json
+import sys
+from termcolor import colored, cprint
 
 CONFIG_FILE="configs/log_config.json"
 
 class DebugModule:
     def __init__(self, file_name='log.txt'):
+        log_location_set()
         LOGS_FILE_PATH = json.load(open(CONFIG_FILE))["logs_file_path"]
         self.file_path = os.path.join(LOGS_FILE_PATH, file_name)
         if not os.path.exists(self.file_path):
             with open(self.file_path, "w") as f:
                 f.write("")
 
-    def log_message(self, message, severity_no=0):
-        severities={0:"info",1:"warning",2:"error"}
-        severity=severities.get(severity_no,"info")
-        print(message)
+    def log_message(self, message, severity_no=0, script_name=None):
+        severities = {0: "INFO", 1: "WARNING", 2: "ERROR"}
+        severity = severities.get(severity_no, "info")
+
+        color_map = {0: 'green', 1: 'yellow', 2: 'red'}
+        color = color_map.get(severity_no, 'white')
+
         try:
-            module_name = inspect.stack()[1].filename
+            module_name = script_name
             current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             log_message = f"[{current_time}] [{module_name}] [{severity.upper()}] {message}\n"
 
             with open(self.file_path, 'a') as file:
                 file.write(log_message)
 
-            # print(f"Logged message with severity '{severity}' to file: {self.file_path}")
+            print(colored(f"[{severity.upper()}] {message}", color))
         except IOError:
-            print(f"Error: Unable to write to file: {self.file_path}")
+            print(colored(f"Error: Unable to write to file: {self.file_path}", 'red'))
 
     def show_logs(self):
         try:
             with open(self.file_path, 'r') as file:
                 print(file.read())
         except IOError:
-            print(f"Error: Unable to read file: {self.file_path}")
+            print(colored(f"Error: Unable to read file: {self.file_path}", 'red'))
 
-def log(msg):
-    logger=DebugModule("log.txt")
-    logger.log_message(msg)
+def log(msg, severity_no=0, *args):
+    logger = DebugModule("log.txt")
+    calling_script_path = os.path.abspath(sys.argv[0])
+    root_dir_index = calling_script_path.find("TorrentLAN")
+
+    if root_dir_index != -1:
+        calling_script_name = calling_script_path[root_dir_index:]
+    else:
+        calling_script_name = calling_script_path
+
+    formatted_msg = msg.format(*args)
+    logger.log_message(formatted_msg, severity_no, calling_script_name)
+
 
 def show_logs():
     logger=DebugModule("log.txt")
@@ -57,4 +72,4 @@ def log_location_set():
             f.write("")
 
 if __name__ == '__main__':
-    log_location_set()
+    log("testing",1)
