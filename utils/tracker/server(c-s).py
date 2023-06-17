@@ -44,7 +44,22 @@ def handle_client(conn, addr):
     js_data = json.loads(data.decode())
     logger_server("js data : "+str(js_data))
     ip_reg=js_data.get("ip_reg",False)
-    if ip_reg:
+    ip_get=js_data.get("ip_get",False)
+
+    if ip_get:
+        logger_server("Querying a IP")
+        unique_ids = js_data['unique_ids']
+        with open(ID_to_IP) as f:
+            id_to_ip = json.load(f)
+        
+        return_js_data={}
+        for unique_id in unique_ids:
+            ip_and_netmask = id_to_ip.get(unique_id, None)
+            return_js_data[unique_id] = ip_and_netmask
+        conn.sendall(json.dumps(return_js_data).encode())
+        conn.close()
+
+    elif ip_reg:
         logger_server("IP registration")
         unique_id = js_data['unique_id']
         ip = js_data['ip']

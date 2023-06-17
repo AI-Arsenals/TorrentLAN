@@ -7,6 +7,8 @@ CONFIG_IDENTITY = "configs/identity.json"
 CONFIG_CLIENT = "configs/client(c-s).json"
 OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 DBS_LOCATION = "./data/.db/file_tree.db"
+SERVER_CONFIG="configs/server.json"
+SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 
 PORT = 8888
 
@@ -63,6 +65,6 @@ def check_updation(ip):
             else:
                 print("Already Upto date")
 if __name__ == '__main__':
-    ip = get_ip_address('home.iitj.ac.in')
+    ip = get_ip_address(SERVER_ADDR)
     print(f"Connecting to {ip}")
     check_updation(ip)
