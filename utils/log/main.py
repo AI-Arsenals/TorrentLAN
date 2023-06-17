@@ -54,6 +54,8 @@ def log(msg, severity_no=0, *args):
     logger.log_message(msg, severity_no, calling_script_name)
 
 
+
+
 def show_logs():
     logger=DebugModule("log.txt")
     logger.show_logs()
