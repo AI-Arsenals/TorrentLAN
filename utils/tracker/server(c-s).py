@@ -57,6 +57,7 @@ def handle_client(conn, addr):
             ip_and_netmask = id_to_ip.get(unique_id, None)
             return_js_data[unique_id] = ip_and_netmask
         conn.sendall(json.dumps(return_js_data).encode())
+        conn.close()
 
     elif ip_reg:
         logger_server("IP registration")

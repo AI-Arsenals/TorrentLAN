@@ -11,6 +11,8 @@ import netifaces
 CONFIG_IDENTITY = "configs/identity.json"
 CONFIG_CLIENT = "configs/client_ip_reg(c-s).json"
 OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
+SERVER_CONFIG="configs/server.json"
+SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 
 PORT = 8888
 
@@ -93,7 +95,7 @@ def get_netmask(ip_address):
     return None
 
 if __name__ == '__main__':
-    ip = get_ip_address('home.iitj.ac.in')
+    ip = get_ip_address(SERVER_ADDR)
     netmask=get_netmask(ip)
     print(f"Connecting to {ip}")
     update(ip,netmask)
