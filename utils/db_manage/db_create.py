@@ -5,6 +5,11 @@ import hashlib
 import time
 import platform
 import datetime
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '..', '..')))
+from utils.log.main import log
 
 SOFTWARE_DIR = os.getcwd()
 DATABASE_DIR = "data/.db"
@@ -240,7 +245,8 @@ def main():
         update_date = datetime.datetime.strptime(value["update_date"], "%Y-%m-%d %H:%M:%S.%f")
         current_time = datetime.datetime.now()
         elapsed_time = current_time - update_date
-        if elapsed_time.total_seconds() <= 24 * 60 * 60 or False: 
+        if elapsed_time.total_seconds() <= 24 * 60 * 60:
+            log(f"Skipping {key} as it was updated less than 24 hours ago")
             continue
         path = value["path"]
         name = key
