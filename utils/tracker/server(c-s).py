@@ -48,13 +48,14 @@ def handle_client(conn, addr):
         logger_server("IP registration")
         unique_id = js_data['unique_id']
         ip = js_data['ip']
+        netmask=js_data['netmask']
         if not os.path.exists(ID_to_IP):
             with open(ID_to_IP, 'w') as f:
-                json.dump({unique_id: ip}, f)
+                json.dump({unique_id: {ip,netmask}}, f)
         else:
             with open(ID_to_IP) as f:
                 id_to_ip = json.load(f)
-            id_to_ip[unique_id] = ip
+            id_to_ip[unique_id] = {ip,netmask}
             with open(ID_to_IP, 'w') as f:
                 json.dump(id_to_ip, f)
     else:
