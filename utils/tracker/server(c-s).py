@@ -9,6 +9,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 from utils.tracker.shared_util.intranet_ips_grabber import get_intranet_ips
 from utils.db_manage.hash_searcher import hash_list_searcher
+from utils.db_manage.subdb_maker_with_node import subdb_maker
 
 HOST = get_intranet_ips()
 PORT = 8888
@@ -16,6 +17,7 @@ PORT = 8888
 DB_LOCATION = "data/.db"
 ID_to_IP = "data/id_to_ip.json"
 SERVER_LOGS=".server_log"
+SUB_DB_PATH = "data/.db/sub_db"
 
 def logger_server(message, severity_no=0):
     severities={0:"info",1:"warning",2:"error"}
@@ -52,6 +54,7 @@ def handle_client(conn, addr):
     ip_get=js_data.get("ip_get",False)
     db_update=js_data.get("db_update",False)
     hash_to_id=js_data.get("hash_to_id",False)
+    subdb_download=js_data.get("subdb_download",False)
 
     if ip_get:
         logger_server("Querying a IP")
@@ -97,6 +100,26 @@ def handle_client(conn, addr):
         conn.sendall(data_to_send)
         conn.close()
         
+    elif subdb_download:
+        logger_server("SubDB download")
+        unique_id = js_data['unique_id']
+        lazy_file_hash = js_data['lazy_file_hash']
+        subdb_filename=unique_id + "_" + lazy_file_hash + ".db"
+        data_to_send={}
+        data_to_send['subdb_success']=False
+        data_to_send['subdb_filename']=subdb_filename
+        if subdb_maker(unique_id,lazy_file_hash,subdb_filename):
+            data_to_send['subdb_success']=True
+            with open(os.path.join(SUB_DB_PATH, subdb_filename), "rb") as f:
+                subdb_data = f.read()
+            subdb_data = base64.b64encode(subdb_data)
+            data_to_send['subdb_data']=subdb_data.decode()
+        else:
+            logger_server("SubDB download failed")
+        data_to_send = json.dumps(data_to_send).encode()
+        data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>" #"<"+ sha256 of "<EOF>"+">"
+        conn.sendall(data_to_send)
+        conn.close()
     else:
         logger_server("Unknown request")
         conn.close()
