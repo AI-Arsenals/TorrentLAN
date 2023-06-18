@@ -10,9 +10,10 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), '..', '..')))
 from utils.log.main import log
+from utils.tracker.shared_util.intranet_ips_grabber import get_intranet_ips
 
 
-HOST = ''
+HOST = get_intranet_ips()
 PORT = 8890
 
 DATABASE_DIR = "data/.db"
@@ -91,13 +92,22 @@ def handle_client(conn, addr):
 
 def start_server():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((HOST, PORT))
-    s.listen(15)
-    log(f"Server started on {HOST}:{PORT}")
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    for host in HOST:
+        try:
+            s.bind((host, PORT))
+            s.listen(250)
+            log("Listening on " + host + ":" + str(PORT) + "...")
+        except Exception as e:
+            log("Error binding to " + host + ": " + str(e))
+        else:
+            break
+
     while True:
         conn, addr = s.accept()
 
-        # Multi thread
+        # Multi-thread
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
 
