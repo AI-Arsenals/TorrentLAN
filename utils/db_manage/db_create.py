@@ -11,7 +11,6 @@ sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), '..', '..')))
 from utils.log.main import log
 
-SOFTWARE_DIR = os.getcwd()
 DATABASE_DIR = "data/.db"
 DB_NAME = "file_tree.db"
 CONFIG_FOLDER_LOCATION = "configs/folder_locations.json"
@@ -124,8 +123,21 @@ def insert_item(conn, table_name, name, is_file, parent_id, child_id, metadata, 
     cursor.close()
     return last_row_id
 
+def full_row_update_at_id(conn, table_name, insert_id, name, is_file, parent_id, child_id, metadata, lazy_file_check_hash, unique_id, hash_value):
+    if child_id:
+        child_id=', '.join(map(str, child_id))
+    update_query = '''
+        UPDATE {table_name}
+        SET name = ?, is_file = ?, parent_id = ?, child_id = ?, metadata = ?, lazy_file_check_hash = ?, unique_id = ?, hash = ?
+        WHERE id = ?;
+    '''
+    cursor = conn.cursor()
+    update_query = update_query.format(table_name=table_name)
+    cursor.execute(update_query, (name, is_file, parent_id, child_id, json.dumps(metadata), lazy_file_check_hash, unique_id, hash_value, insert_id))
+    conn.commit()
+    cursor.close()
 
-def update_child_at_id(conn, table_name, insert_id, child_id):
+def update_child_at_id(conn, table_name, insert_at_id, child_id):
     child_id=', '.join(map(str, child_id))
     update_query = '''
         UPDATE {table_name}
@@ -134,7 +146,7 @@ def update_child_at_id(conn, table_name, insert_id, child_id):
     '''
     cursor = conn.cursor()
     update_query = update_query.format(table_name=table_name)
-    cursor.execute(update_query, (child_id, insert_id))
+    cursor.execute(update_query, (child_id, insert_at_id))
     conn.commit()
     cursor.close()
 
@@ -236,7 +248,7 @@ def remove_deleted_files(conn, table_name, path):
     conn.commit()
 
 
-def main():
+def main(FORCE_UPDATE=False):
     with open(CONFIG_FOLDER_LOCATION) as f:
         data = json.load(f)
     
@@ -245,8 +257,8 @@ def main():
         update_date = datetime.datetime.strptime(value["update_date"], "%Y-%m-%d %H:%M:%S.%f")
         current_time = datetime.datetime.now()
         elapsed_time = current_time - update_date
-        if elapsed_time.total_seconds() <= 24 * 60 * 60:
-            log(f"Skipping {key} as it was updated less than 24 hours ago")
+        if elapsed_time.total_seconds() <= 24 * 60 * 60 and not FORCE_UPDATE:
+            log(f"Skipping {key} as it was updated less than 24 hours ago",1)
             continue
         path = value["path"]
         name = key
@@ -257,10 +269,17 @@ def main():
         # root folder
         metadata=get_metadata(path)
         lazy_file_hash = lazy_file_check_hash(path, metadata['Last Modified'])
-        # check if in db
-        result = check_file_in_db(conn, lazy_file_hash, name)
+
+        # check if root in db
+        query = f"SELECT id FROM {name} WHERE parent_id IS NULL;"
+        cursor=conn.cursor()
+        cursor.execute(query)
+        result = cursor.fetchall()
+        cursor.close()
+        
         if len(result) > 0:
             item_id = result[0][0]
+            full_row_update_at_id(conn, name, item_id,"root", 0, None, None, metadata, lazy_file_hash, UNIQUE_ID, "")
         else:
             item_id=insert_item(conn, name, "root", 0, None, None, metadata, lazy_file_hash, UNIQUE_ID, "")
         child_id_vals=process_folder(conn, name, path, item_id)
@@ -268,10 +287,12 @@ def main():
 
         # remove deleted files
         remove_deleted_files(conn, name, path)
+
+        log(f"Updated {name} successfully")
         
     conn.close()
     with open(CONFIG_FOLDER_LOCATION, 'w') as f:
         json.dump(data, f, indent=4)
 
 if __name__ == '__main__':
-    main()
+    main(FORCE_UPDATE=True)

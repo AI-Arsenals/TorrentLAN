@@ -1,12 +1,6 @@
-"""
-This module contacts unique_id server and check if it is alive and correct
-"""
-
 import socket
 import os
 import json
-import base64
-import netifaces
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
@@ -14,9 +8,7 @@ from utils.log.main import log
 
 PORT = 8890
 
-import socket
-
-def live_ip_checker(unique_id, ip):
+def file_download(ip, hash,table_name):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -25,14 +17,21 @@ def live_ip_checker(unique_id, ip):
             s.connect((ip, PORT))
             log(f"Connected")
             js_data = {}
-            js_data["live_ip_check"] = True
-            js_data["unique_id"] = unique_id
+            js_data["file_download"] = True
+            js_data["table_name"] = table_name
+            js_data["hash"] = hash
             data_to_send = json.dumps(js_data)
             data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>" #"<"+ sha256 of "<EOF>"+">"
             s.sendall(data_to_send.encode())
-
+            
             # Receive data
-            data = s.recv(1024)
+            data=b""
+            while True:
+                chunk = s.recv(1024)
+                if not chunk:
+                    break
+                data += chunk
+
             if data.endswith(b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"):
                 data = data[:-66]
             else:
@@ -40,15 +39,14 @@ def live_ip_checker(unique_id, ip):
                 s.close()
                 return False
             return_data = json.loads(data.decode())
-        s.close()
-        return return_data["check_result"]
+            if(return_data["found"]):
+                return return_data["file_data"]
+            else:
+                return False
     except ConnectionRefusedError:
-        log(f"The IP {ip} is down", 1)
-        return False
-    except socket.timeout:
-        log(f"Connection to {ip} timed out", 1)
+        log(f"The IP {ip} is down", 2)
         return False
 
 
 if __name__ == '__main__':
-    print(live_ip_checker("5e7350ca-5dd7-40df-9ea5-b2ece85bc4da",'127.0.0.1'))
+    print(file_download("127.0.0.1","fae379b2920b02b4c85110eb4d3f42a9997e669c96b15423f9af8cdfd9775098","Normal_Content_Main_Folder"))

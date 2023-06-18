@@ -4,6 +4,10 @@ import os
 import json
 import base64
 import datetime
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
+from utils.db_manage.hash_searcher import hash_list_searcher
 
 HOST = ''
 PORT = 8888
@@ -45,6 +49,8 @@ def handle_client(conn, addr):
     logger_server("js data : "+str(js_data))
     ip_reg=js_data.get("ip_reg",False)
     ip_get=js_data.get("ip_get",False)
+    db_update=js_data.get("db_update",False)
+    hash_to_id=js_data.get("hash_to_id",False)
 
     if ip_get:
         logger_server("Querying a IP")
@@ -73,12 +79,25 @@ def handle_client(conn, addr):
             id_to_ip[unique_id] = [ip,netmask]
             with open(ID_to_IP, 'w') as f:
                 json.dump(id_to_ip, f)
-    else:
+    elif db_update:
         logger_server("DB update")
         unique_id = js_data['unique_id']
         db_data = base64.b64decode(js_data['db_data'])
         with open(os.path.join(DB_LOCATION, unique_id + ".db"), "wb") as f:
             f.write(db_data)
+        conn.close()
+
+    elif hash_to_id:
+        logger_server("Hash to UNIQUE ID")
+        hashes = js_data['hashes']
+        data_to_send = hash_list_searcher(hashes)
+        data_to_send = json.dumps(data_to_send).encode()
+        data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+        conn.sendall(data_to_send)
+        conn.close()
+        
+    else:
+        logger_server("Unknown request")
         conn.close()
 
 def start_server():

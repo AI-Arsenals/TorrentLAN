@@ -21,6 +21,7 @@ def update_server(unique_id, ip):
             print("Connected to server")
             js_data = {}
             js_data["unique_id"] = unique_id
+            js_data["db_update"] = True
             with open(DBS_LOCATION, "rb") as f:
                 js_data["db_data"] = base64.b64encode(f.read()).decode()
             data_to_send = json.dumps(js_data)
