@@ -45,9 +45,12 @@ def fetch_unique_id_from_hashes(hashes):
                 if not chunk:
                     break
                 data += chunk
-                if data.endswith(b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"): #"<"+ sha256 of "<EOF>"+">"
-                    data = data[:-66]  # Remove termination sequence from the data
-                    break
+            if data.endswith(b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"): #"<"+ sha256 of "<EOF>"+">"
+                data = data[:-66]  # Remove termination sequence from the data
+            else:
+                log(f"Termination sequence not found in data from {ip}")
+                s.close()
+                return False
             data = json.loads(data)
             return data
     except ConnectionRefusedError:

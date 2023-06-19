@@ -5,8 +5,7 @@ This module contacts unique_id server and check if it is alive and correct
 import socket
 import os
 import json
-import base64
-import netifaces
+import time
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
@@ -31,17 +30,30 @@ def live_ip_checker(unique_id, ip):
             data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>" #"<"+ sha256 of "<EOF>"+">"
             s.sendall(data_to_send.encode())
 
-            # Receive data
-            data = s.recv(1024)
+            # Receive data and measure transfer speed
+            start_time = time.time()
+            data = b""
+            while True:
+                chunk = s.recv(1024)
+                if not chunk:
+                    break
+                data+=chunk
             if data.endswith(b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"):
                 data = data[:-66]
             else:
                 log(f"Termination sequence not found in data from {ip}")
                 s.close()
                 return False
+            end_time = time.time()
             return_data = json.loads(data.decode())
+            if not return_data["check_result"]:
+                log(f"Unique ID {unique_id} is not correct for ip {ip}", 1)
+                # report to threat_report module
+                return False
+            speed_test_data=return_data["speed_test_data"]
+            transfer_speed = len(data) / (end_time - start_time +1e-10)
         s.close()
-        return return_data["check_result"]
+        return return_data["check_result"],transfer_speed
     except ConnectionRefusedError:
         log(f"The IP {ip} is down", 1)
         return False

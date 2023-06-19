@@ -62,9 +62,9 @@ def subdb_downloader(unique_id,lazy_file_hash):
                     f.write(subdb_data)
                 log(f"Subdb downloaded successfully")
                 s.close()
-                return True
+                return subdb_filename
             else:
-                log(f"Subdb download failed")
+                log(f"Subdb download failed",2)
                 s.close()
                 return False
     except ConnectionRefusedError:

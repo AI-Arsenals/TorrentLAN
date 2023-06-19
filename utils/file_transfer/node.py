@@ -12,6 +12,9 @@ sys.path.append(os.path.abspath(os.path.join(
 from utils.log.main import log
 from utils.tracker.shared_util.intranet_ips_grabber import get_intranet_ips
 
+LIVE_IP_CHECK_CONFIG= "configs/live_ip_check_config.json"
+SPEED_TEST_DATA_SIZE = json.load(open(LIVE_IP_CHECK_CONFIG))["speed_test_data_size"]
+
 
 HOST = get_intranet_ips()
 PORT = 8890
@@ -40,23 +43,26 @@ def handle_client(conn, addr):
     if live_ip_check:
         unique_id_check_request = js_data["unique_id"]
         if (unique_id_check_request == OWN_UNIQUE_ID):
-            json_data = {"check_result": True}
-            data_to_send = json.dumps(json_data)
+            return_js_data = {}
+            return_js_data["check_result"] = True
+            return_js_data["speed_test_data"]=str(b"0"*SPEED_TEST_DATA_SIZE)
+            data_to_send = json.dumps(return_js_data)
             # "<"+ sha256 of "<EOF>"+">"
             data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
             conn.sendall(data_to_send.encode())
-            log(f"Sent data to {addr}: {str(json_data)}")
         else:
-            json_data = {"check_result": False}
-            data_to_send = json.dumps(json_data)
+            return_js_data = {"check_result": False}
+            data_to_send = json.dumps(return_js_data)
             data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
             conn.sendall(data_to_send.encode())
-            log(f"Sent data to {addr}: {str(json_data)}")
+            log(f"Sent data to {addr}: {str(return_js_data)}")
         conn.close()
     
     elif file_download:
         hash = js_data["hash"]
         table_name = js_data["table_name"]
+        start_byte = js_data["start_byte"]
+        end_byte = js_data["end_byte"]
 
         data_to_send = {}
         data_to_send["found"] = False
@@ -73,7 +79,13 @@ def handle_client(conn, addr):
             if data and is_file:
                 meta_data=json.loads(data[5])
                 file_dir=meta_data["Path"]
-                b64_data = base64.b64encode(open(file_dir, "rb").read())
+                if start_byte and end_byte:
+                        with open(file_dir, "rb") as file:
+                            file.seek(start_byte)
+                            data = file.read(end_byte - start_byte + 1)
+                            b64_data = base64.b64encode(data)
+                else:
+                    b64_data = base64.b64encode(open(file_dir, "rb").read())
                 data_to_send["found"] = True
                 data_to_send["file_data"] = b64_data.decode()
             

@@ -1,7 +1,11 @@
 import socket
 import os
+import sys
 import json
 import base64
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
+from utils.log.main import log
 
 CONFIG_IDENTITY = "configs/identity.json"
 CONFIG_CLIENT = "configs/client(c-s).json"
@@ -16,9 +20,9 @@ def update_server(unique_id, ip):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            print("Connecting to server")
+            log(f"Connecting to server at {ip}")
             s.connect((ip, PORT))
-            print("Connected to server")
+            log("Connected to server")
             js_data = {}
             js_data["unique_id"] = unique_id
             js_data["db_update"] = True
@@ -30,7 +34,7 @@ def update_server(unique_id, ip):
         s.close()
         return True
     except ConnectionRefusedError:
-        print("Server is down")
+        log("Server is down",2)
         return False
 
 def get_ip_address(address):
@@ -40,7 +44,8 @@ def get_ip_address(address):
     except socket.gaierror:
         return None
 
-def check_updation(ip):
+def check_updation(Force_update=False):
+    ip = get_ip_address(SERVER_ADDR)
     mtime = os.stat(DBS_LOCATION).st_mtime
 
     if not os.path.exists(CONFIG_CLIENT):
@@ -48,7 +53,7 @@ def check_updation(ip):
             json.dump({"Last_Sent": mtime}, f)
         success = update_server(OWN_UNIQUE_ID, ip)
         if success:
-            print("Successfully updated server")
+            log("Successfully updated server")
             with open(CONFIG_CLIENT, 'w') as f:
                 json.dump({"Last_Sent": mtime}, f)
         else:
@@ -57,15 +62,13 @@ def check_updation(ip):
         with open(CONFIG_CLIENT, 'r') as f:
             data = json.load(f)
             last_sent = data.get("Last_Sent",None)
-            if last_sent is None or last_sent != mtime:
+            if last_sent is None or last_sent != mtime or Force_update:
                 success = update_server(OWN_UNIQUE_ID, ip)
                 if success:
-                    print("Successfully updated server")
+                    log("Successfully updated server")
                     with open(CONFIG_CLIENT, 'w') as f:
                         json.dump({"Last_Sent": mtime}, f)
             else:
-                print("Already Upto date")
+                log("Already Upto date")
 if __name__ == '__main__':
-    ip = get_ip_address(SERVER_ADDR)
-    print(f"Connecting to {ip}")
-    check_updation(ip)
+    check_updation(Force_update=True)

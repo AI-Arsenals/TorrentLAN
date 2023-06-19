@@ -5,8 +5,11 @@ This module register the client ip with the pc ip in the server
 import socket
 import os
 import json
-import base64
+import sys
 import netifaces
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
+from utils.log.main import log
 
 CONFIG_IDENTITY = "configs/identity.json"
 CONFIG_CLIENT = "configs/client_ip_reg(c-s).json"
@@ -20,9 +23,9 @@ def update_server(unique_id, ip,local_conn_ip,netmask):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            print("Connecting to server")
+            log(f"Connecting to server at {ip}")
             s.connect((ip, PORT))
-            print("Connected to server")
+            log("Connected to server")
             js_data = {}
             js_data["ip_reg"] = True
             js_data["unique_id"] = unique_id
@@ -34,7 +37,7 @@ def update_server(unique_id, ip,local_conn_ip,netmask):
         s.close()
         return True
     except ConnectionRefusedError:
-        print("Server is down")
+        log("Server is down",2)
         return False
 
 def get_ip_address(address):
@@ -54,14 +57,16 @@ def get_my_connect_ip(conn_address):
     except socket.error:
         return None
     
-def update(ip,netmask):
+def update(Force_update=False):
+    ip = get_ip_address(SERVER_ADDR)
+    netmask=get_netmask(ip)
     local_conn_ip = get_my_connect_ip(ip)
     if not os.path.exists(CONFIG_CLIENT):
         with open(CONFIG_CLIENT, 'w') as f:
             json.dump({"local_conn_ip": local_conn_ip}, f)
         success = update_server(OWN_UNIQUE_ID, ip,local_conn_ip,netmask)
         if success:
-            print("Successfully updated server")
+            log("Successfully updated server")
             with open(CONFIG_CLIENT, 'w') as f:
                 json.dump({"Last_Sent": local_conn_ip}, f)
         else:
@@ -70,14 +75,14 @@ def update(ip,netmask):
         with open(CONFIG_CLIENT, 'r') as f:
             data = json.load(f)
             last_local_conn_ip = data.get("local_conn_ip",None)
-            if last_local_conn_ip is None or last_local_conn_ip != local_conn_ip:
+            if last_local_conn_ip is None or last_local_conn_ip != local_conn_ip or Force_update:
                 success = update_server(OWN_UNIQUE_ID, ip,local_conn_ip,netmask)
                 if success:
-                    print("Successfully updated server")
+                    log("Successfully updated server")
                     with open(CONFIG_CLIENT, 'w') as f:
                         json.dump({"local_conn_ip": local_conn_ip}, f)
             else:
-                print("Already Upto date")
+                log("Already Upto date")
 
 def get_netmask(ip_address):
     # Get the network interfaces
@@ -95,7 +100,4 @@ def get_netmask(ip_address):
     return None
 
 if __name__ == '__main__':
-    ip = get_ip_address(SERVER_ADDR)
-    netmask=get_netmask(ip)
-    print(f"Connecting to {ip}")
-    update(ip,netmask)
+    update(Force_update=True)

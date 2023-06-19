@@ -4,6 +4,8 @@ import os
 import shutil
 import threading
 import time
+import datetime
+from termcolor import colored
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), '..', '..', '..')))
@@ -14,36 +16,57 @@ This downloads a file from the web using multiple threads and merges the file se
 """
 
 TMP_DOWNLOAD_DIR = "data/Web_downloader/tmp"
-PROGRESS_METER=0
-PROGRESS_BAR_MIN=0
+WEB_DOWNLOAD_DIR = "data/Web_downloader"
+DOWNLOADED_SIZE=0
 
-def download_segment(url, start_byte, end_byte, file, TOTAL_SIZE, DOWNLOADED_SIZE, FILE_SIZE_SHOW,num_segments):
-    global PROGRESS_METER
-    global PROGRESS_BAR_MIN
+def download_segment(url, start_byte, end_byte, file, TOTAL_SIZE, FILE_SIZE_SHOW,num_segments):
+    start_time = time.time()
     headers = {'Range': f'bytes={start_byte}-{end_byte}'}
     response = requests.get(url, headers=headers, stream=True)
+
+    DOWNLOADED_SIZE=0
+    DOWNLOADED_SIZE_lock=threading.Lock()
+    def access_downloaded_size(inc_val,fetch=False):
+        global DOWNLOADED_SIZE
+        DOWNLOADED_SIZE_lock.acquire()
+        if fetch:
+            val=DOWNLOADED_SIZE
+            DOWNLOADED_SIZE_lock.release()
+            return val
+        DOWNLOADED_SIZE+=inc_val
+        DOWNLOADED_SIZE_lock.release()
+
+    def report_progress():
+        downloaded = access_downloaded_size(None, True)
+        progress = downloaded / TOTAL_SIZE
+        progress_percent = int(progress * 100)
+        total_bar_length = int(progress*25)
+
+        bar = ('#' * (total_bar_length) + '-' * ((25 - total_bar_length)))
+
+        bar_color = 'green' if progress_percent >= 50 else 'yellow'
+        percent_color = 'cyan'
+
+        # Calculate estimated time remaining
+        elapsed_time = time.time() - start_time
+        estimated_total_time = elapsed_time / progress if progress > 0 else 0
+        estimated_remaining_time = estimated_total_time - elapsed_time
+
+        # Format estimated remaining time
+        minutes = int(estimated_remaining_time // 60)
+        seconds = int(estimated_remaining_time % 60)
+        progress_str = f"Downloading: [{colored(bar, bar_color):<25}] {colored(progress_percent, percent_color)}%"
+        estimated_time_str = f" ET: {minutes} min {seconds} sec"
+
+        print('\r' + progress_str + estimated_time_str, end='')
     
     with open(file, 'wb') as file:
-        for chunk in response.iter_content(chunk_size=64*1024):
+        for chunk in response.iter_content(chunk_size=1024*1024):
             file.write(chunk)
             if FILE_SIZE_SHOW:
-                DOWNLOADED_SIZE += len(chunk)
-                progress = DOWNLOADED_SIZE / TOTAL_SIZE
-                progress_bar = '#' * PROGRESS_BAR_MIN * num_segments
-            
-            # Remove the progress bar periodically
-            if PROGRESS_METER % 10 ==0:
-                if(int(progress * 100) > PROGRESS_BAR_MIN):
-                    PROGRESS_BAR_MIN=int(progress * 100)
-                    if(PROGRESS_BAR_MIN>99):
-                        PROGRESS_BAR_MIN=99
-                sys.stdout.write("\rDownloading: [{:<100}] {}%".format(progress_bar, PROGRESS_BAR_MIN*num_segments))
-                sys.stdout.flush()
-            PROGRESS_METER+=1
+                access_downloaded_size(len(chunk))
+                report_progress()
                 
-    if FILE_SIZE_SHOW:
-        sys.stdout.write('\n')
-        sys.stdout.flush()
 
 def download_file(url, num_segments,filename):
     response = requests.head(url)
@@ -56,8 +79,6 @@ def download_file(url, num_segments,filename):
         FILE_SIZE_SHOW=False
     else:
         log(f"Downloading {TOTAL_SIZE} bytes ...")
-
-    DOWNLOADED_SIZE = 0
 
     if not os.path.exists (TMP_DOWNLOAD_DIR):
         os.makedirs(TMP_DOWNLOAD_DIR)
@@ -76,7 +97,7 @@ def download_file(url, num_segments,filename):
 
         segment_filepath = f'{filename}_segment{i}.dat'
         segment_filepath = os.path.join(TMP_DOWNLOAD_DIR, segment_filepath)
-        thread = threading.Thread(target=download_segment, args=(url, start_byte, end_byte, segment_filepath,TOTAL_SIZE,DOWNLOADED_SIZE,FILE_SIZE_SHOW,num_segments))
+        thread = threading.Thread(target=download_segment, args=(url, start_byte, end_byte, segment_filepath,TOTAL_SIZE,FILE_SIZE_SHOW,num_segments))
         thread.start()
         threads.append(thread)
         file_segments.append(segment_filepath)
@@ -84,8 +105,11 @@ def download_file(url, num_segments,filename):
     for thread in threads:
         thread.join()
 
-    sys.stdout.write("\rDownloading: [{:<100}] {}%".format('#' * 100, 100))
-    sys.stdout.flush()
+    bar = ('#' * (25) + '-' * ((25 - 25)))
+    bar_color = 'green' if 100 >= 50 else 'yellow'
+    percent_color = 'cyan'
+    f"Downloading: [{colored(bar, bar_color):<25}] {colored(100, percent_color)}%"
+    log("\nDownload complete")
 
     return file_segments
 
@@ -104,11 +128,13 @@ def main(url,output_filename=None,output_dir=None):
         log(f"Output filename not specified, using {output_filename} as filename")
     else:
         if '.' not in output_filename:
-            if '.' in url:
-                output_filename+="."+url.split('.')[-1]
+            url_filename=url.split('/')[-1]
+            ind_dot=url_filename.find('.')
+            ext=url_filename[ind_dot:]
+            output_filename=output_filename+ext
         log(f"Saving as {output_filename}")
     
-    output_filedir = os.path.join(os.getcwd(),"data","Web_downloader",output_filename)
+    output_filedir = os.path.join(WEB_DOWNLOAD_DIR,output_filename)
     if os.path.exists(output_filedir):
         log(f"File '{output_filename}' already exists",2)
         return
@@ -116,17 +142,14 @@ def main(url,output_filename=None,output_dir=None):
     file_segments = download_file(url, num_segments,output_filename)
 
     # Merge the file segments
-    merge_files(file_segments, output_filename)
+    merge_files(file_segments, output_filedir)
 
     # Remove the file segments
     for segment in file_segments:
         os.remove(segment)
-
-    # correct file extension
-    file_ext="."+url.split('.')[-1]
     
     # Move to output directory
-    destination = os.path.join(os.getcwd(),"data","web_downloader")
+    destination = WEB_DOWNLOAD_DIR
     if not os.path.exists(destination):
         os.makedirs(destination)
     if output_dir:
@@ -134,11 +157,11 @@ def main(url,output_filename=None,output_dir=None):
         if(os.path.exists(os.path.join(output_dir,output_filename))):
             log(f"File '{output_filename}' already exists in {output_dir}",1)
 
-            new_output_filename =  str(time.time())+output_filename
+            new_output_filename =  datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+"_"+output_filename
             # rename file
             os.rename(output_filedir,os.path.join(os.getcwd(),"data","Web_downloader",new_output_filename))
             output_filedir = os.path.join(os.getcwd(),"data","Web_downloader",new_output_filename)
-            log(f"Renamed file to {new_output_filename}",1)
+            log(f"Saving with filename {new_output_filename}",1)
 
         shutil.move(output_filedir,output_dir)
 
@@ -148,7 +171,7 @@ def main(url,output_filename=None,output_dir=None):
 if __name__ == '__main__':
     try:
         url = 'https://github.com/AI-Arsenals/TorrentLAN/archive/refs/heads/main.zip'
-        main(url,output_filename='TorrentLAN',output_dir=os.path.join(os.getcwd(),"data"))
+        main(url,output_filename='TorrentLAN')
     except Exception as e:
         log(e,2)
 
