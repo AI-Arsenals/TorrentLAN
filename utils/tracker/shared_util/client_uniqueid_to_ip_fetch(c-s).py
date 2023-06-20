@@ -30,9 +30,9 @@ def get_ips_and_netmasks(unique_ids):
             js_data = {}
             js_data["ip_get"]=True
             js_data["unique_ids"] = unique_ids
-            data_to_send = json.dumps(js_data)
-            data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>" #"<"+ sha256 of "<EOF>"+">"
-            s.sendall(data_to_send.encode())
+            data_to_send = json.dumps(js_data).encode()
+            data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>" #"<"+ sha256 of "<EOF>"+">"
+            s.sendall(data_to_send)
 
             # Receive data
             data=b""

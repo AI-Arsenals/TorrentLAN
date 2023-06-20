@@ -19,7 +19,7 @@ def request_database(client_unique_id,ip,modified_time):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((ip, PORT))
             data_to_send = "Send".encode()
-            data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>".encode()
+            data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
             s.sendall(data_to_send)
 
             data=b""
@@ -51,10 +51,14 @@ def check_updation(client_unique_id,ip):
         # Connect to clients
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((ip, PORT))
-            s.sendall("Update".encode())
+            data_to_send="Update".encode()
+            data_to_send+=b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+            s.sendall(data_to_send)
             
             # Receive response from server
             data = s.recv(1024)
+            if data.endswith(b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"): #"<"+ sha256 of "<EOF>"+">"
+                data = data[:-66]  # Remove termination sequence from the data
             if os.path.exists(os.path.join(DBS_LOCATION,client_unique_id+".db")) and data.decode()==str(os.stat(os.path.join(DBS_LOCATION, client_unique_id+".db")).st_mtime):
                 log(f"{client_unique_id} is Up to date")
                 s.close()

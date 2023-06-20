@@ -50,15 +50,15 @@ def handle_client(conn, addr):
             return_js_data = {}
             return_js_data["check_result"] = True
             return_js_data["speed_test_data"]=str(b"0"*SPEED_TEST_DATA_SIZE)
-            data_to_send = json.dumps(return_js_data)
+            data_to_send = json.dumps(return_js_data).encode()
             # "<"+ sha256 of "<EOF>"+">"
-            data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
-            conn.sendall(data_to_send.encode())
+            data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+            conn.sendall(data_to_send)
         else:
             return_js_data = {"check_result": False}
-            data_to_send = json.dumps(return_js_data)
-            data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
-            conn.sendall(data_to_send.encode())
+            data_to_send = json.dumps(return_js_data).encode()
+            data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+            conn.sendall(data_to_send)
             log(f"Sent data to {addr}: {str(return_js_data)}",file_name=NODE_file_transfer_log)
         conn.close()
     
@@ -103,8 +103,8 @@ def handle_client(conn, addr):
                 data_to_send["found"] = True
                 data_to_send["file_data"] = b64_data.decode()
             
-            data_to_send = json.dumps(data_to_send)
-            data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+            data_to_send = json.dumps(data_to_send).encode()
+            data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
             log(f"Data Prepared in {time.time()-start_time} seconds",file_name=NODE_file_transfer_log)
             conn.sendall(data_to_send.encode())
             log(f"Data Prepared and sent in {time.time()-start_time} seconds",file_name=NODE_file_transfer_log)
@@ -112,8 +112,10 @@ def handle_client(conn, addr):
         except Exception as e:
             log(f"Error while fetching data from database: {e}",severity_no=1,file_name=NODE_file_transfer_log)
             data_to_send = json.dumps(data_to_send)
-            data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
-            conn.sendall(json.dumps(data_to_send).encode())
+            data_to_send=json.dumps(data_to_send).encode()
+            data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+            log(f"Above Error ,Sent data to {addr} : {data_to_send}",severity_no=2,file_name=NODE_file_transfer_log)
+            conn.sendall(data_to_send)
 
         conn.close()
 
@@ -135,7 +137,7 @@ def start_server():
         readable, _, _ = select.select(sockets, [], [])
         for sock in readable:
             conn, addr = sock.accept()
-            threading.Thread(target=handle_client, args=(conn, addr))
+            threading.Thread(target=handle_client, args=(conn, addr)).start()
 
 if __name__ == '__main__':
     start_server()

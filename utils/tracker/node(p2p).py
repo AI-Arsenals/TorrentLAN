@@ -36,7 +36,7 @@ def handle_client(conn, addr):
             elif data.decode() == "Send":
                 with open(DB_LOCATION, 'rb') as file:
                     file_data = file.read()
-                data_to_send = base64.b64encode(file_data)
+                data_to_send = (base64.b64encode(file_data)).encode()
                 data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
                 conn.sendall(data_to_send)
             conn.close()
@@ -61,7 +61,7 @@ def start_server():
         readable, _, _ = select.select(sockets, [], [])
         for sock in readable:
             conn, addr = sock.accept()
-            threading.Thread(target=handle_client, args=(conn, addr))
+            threading.Thread(target=handle_client, args=(conn, addr)).start()
 
 if __name__ == '__main__':
     start_server()

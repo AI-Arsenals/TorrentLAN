@@ -13,6 +13,7 @@ def file_download(ip, hash,table_name,start_byte=None,end_byte=None):
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             log(f"Connecting to {ip}:{PORT}")
+            s.timeout(60*2)
             s.connect((ip, PORT))
             log(f"Connected")
             js_data = {}
@@ -21,9 +22,9 @@ def file_download(ip, hash,table_name,start_byte=None,end_byte=None):
             js_data["hash"] = hash
             js_data["start_byte"] = start_byte
             js_data["end_byte"] = end_byte
-            data_to_send = json.dumps(js_data)
-            data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>" #"<"+ sha256 of "<EOF>"+">"
-            s.sendall(data_to_send.encode())
+            data_to_send = json.dumps(js_data).encode()
+            data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>" #"<"+ sha256 of "<EOF>"+">"
+            s.sendall(data_to_send)
             
             # Receive data
             data=b""

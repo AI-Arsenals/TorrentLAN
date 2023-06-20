@@ -50,7 +50,10 @@ def handle_client(conn, addr):
         for unique_id in unique_ids:
             ip_and_netmask = id_to_ip.get(unique_id, None)
             return_js_data[unique_id] = ip_and_netmask
-        conn.sendall(json.dumps(return_js_data).encode())
+        data_to_send=json.dumps(return_js_data).encode()
+        data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+        conn.sendall(data_to_send)
+        log(f"Sending back: {return_js_data}",severity_no=1,file_name=SERVER_LOGS)
         conn.close()
 
     elif ip_reg:
@@ -82,6 +85,7 @@ def handle_client(conn, addr):
         data_to_send = json.dumps(data_to_send).encode()
         data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
         conn.sendall(data_to_send)
+        log(f"Sending back: {data_to_send}",severity_no=1,file_name=SERVER_LOGS)
         conn.close()
         
     elif subdb_download:
