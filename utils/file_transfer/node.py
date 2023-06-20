@@ -1,3 +1,4 @@
+import time
 import socket
 import threading
 import os
@@ -24,6 +25,7 @@ CONFIG_FOLDER_LOCATION = "configs/folder_locations.json"
 CONFIG_IDENTITY = "configs/identity.json"
 OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 
+HASH_TO_FILE_DIR_CACHE={}
 
 def handle_client(conn, addr):
     log(f"Connection from {addr}")
@@ -59,6 +61,7 @@ def handle_client(conn, addr):
         conn.close()
     
     elif file_download:
+        start_time = time.time()
         hash = js_data["hash"]
         table_name = js_data["table_name"]
         start_byte = js_data["start_byte"]
@@ -71,14 +74,23 @@ def handle_client(conn, addr):
             data = json.load(f)
 
         try :
-            db_con=sqlite3.connect(os.path.join(DATABASE_DIR,"file_tree.db"))
-            cursor=db_con.cursor()
-            cursor.execute(f"SELECT * FROM {table_name} WHERE hash = '{hash}'")
-            data=cursor.fetchone()
-            is_file=data[2]
-            if data and is_file:
-                meta_data=json.loads(data[5])
-                file_dir=meta_data["Path"]
+            found_in_db=False
+            hash_in_cache=False
+            if hash in HASH_TO_FILE_DIR_CACHE:
+                hash_in_cache=True
+            if not hash_in_cache:
+                db_con=sqlite3.connect(os.path.join(DATABASE_DIR,"file_tree.db"))
+                cursor=db_con.cursor()
+                cursor.execute(f"SELECT * FROM {table_name} WHERE hash = '{hash}'")
+                data=cursor.fetchone()
+                is_file=data[2]
+                if data and is_file:
+                    meta_data=json.loads(data[5])
+                    file_dir=meta_data["Path"]
+                    found_in_db=True
+                    HASH_TO_FILE_DIR_CACHE[hash]=file_dir
+            elif found_in_db or hash_in_cache:
+                file_dir=HASH_TO_FILE_DIR_CACHE[hash]
                 if start_byte and end_byte:
                         with open(file_dir, "rb") as file:
                             file.seek(start_byte)
@@ -91,7 +103,10 @@ def handle_client(conn, addr):
             
             data_to_send = json.dumps(data_to_send)
             data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+            log(f"Data Prepared in {time.time()-start_time} seconds")
             conn.sendall(data_to_send.encode())
+            log(f"Data Prepared and sent in {time.time()-start_time} seconds")
+
             log(f"Sent data to {addr}: {str(file_dir)}")
         except Exception as e:
             log(f"Error while fetching data from database: {e}")
@@ -109,7 +124,7 @@ def start_server():
     for host in HOST:
         try:
             s.bind((host, PORT))
-            s.listen(250)
+            s.listen(5)
             log("Listening on " + host + ":" + str(PORT) + "...")
         except Exception as e:
             log("Error binding to " + host + ": " + str(e))

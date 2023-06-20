@@ -28,7 +28,7 @@ def file_download(ip, hash,table_name,start_byte=None,end_byte=None):
             # Receive data
             data=b""
             while True:
-                chunk = s.recv(1024)
+                chunk = s.recv(1024+end_byte-start_byte+1)
                 if not chunk:
                     break
                 data += chunk
