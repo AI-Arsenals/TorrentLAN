@@ -44,7 +44,16 @@ def handle_client(conn, addr):
     log(f"Received data from {addr}: {str(js_data)}",file_name=NODE_file_transfer_log)
     live_ip_check= js_data.get("live_ip_check", False)
     file_download = js_data.get("file_download", False)
-    if live_ip_check:
+    ping=js_data.get("ping",False)
+
+    if ping:
+        return_js_data = {"ping": True}
+        data_to_send = json.dumps(return_js_data).encode()
+        data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+        conn.sendall(data_to_send)
+        conn.close()
+
+    elif live_ip_check:
         unique_id_check_request = js_data["unique_id"]
         if (unique_id_check_request == OWN_UNIQUE_ID):
             return_js_data = {}
