@@ -98,8 +98,13 @@ class HASH_TO_IP_CLASS:
         filtered_ips_n_speed = []
         same_subnet_ips = HASH_TO_IP_CLASS.netmask_handle(local_netmask, unique_ids, UNIQUE_ID_TO_IPS)
 
+        CACHE_check_ip_thread={}
         def check_ip_thread(id, ip):
-            result_live_ip_check=live_ip_checker(id, ip)
+            if ip in CACHE_check_ip_thread:
+                result_live_ip_check=CACHE_check_ip_thread[ip]
+            else:
+                result_live_ip_check=live_ip_checker(id, ip)
+                CACHE_check_ip_thread[ip]=result_live_ip_check
             if result_live_ip_check:
                 filtered_ips_n_speed.append((ip,result_live_ip_check[1]))
             sem.release()  # Release the semaphore
@@ -246,7 +251,9 @@ class DOWNLOAD_FILE_CLASS:
         ALL_IPS_N_SPEED=set()
         UNIQUE_IPS_helper_for_ALL_IPS_N_SPEED=set()
         ALL_IPS_N_SPEED_lock=threading.Lock()
-        HASH_TO_IP_N_SPEED=HASH_TO_IP_CLASS.hash_to_ip(file_hashes)
+        HIGH_SPEED_IPS=set()
+        LOW_SPEED_IPS=set()
+        HASH_TO_IP_N_SPEED=HASH_TO_IP_CLASS.hash_to_ip([file_hash for _, _, file_hash, _ in file_info])
         HASH_TO_IP = {}
         FILE_TRIED_TIMES={}
         FILE_TRIED_TIMES_lock=threading.Lock()
@@ -272,15 +279,17 @@ class DOWNLOAD_FILE_CLASS:
             FILE_WAIT_BEFORE_RETRY[file_path]=time.time()
             if int(file_size) > SIZE_AFTER_WHICH_FILE_IS_CONSIDERED_BIG:
                 big_file_info.append((file_path,file_hash,table_name,file_size))
-                FILE_TRIED_TIMES[file_path]=3
+                FILE_TRIED_TIMES[file_path]=5
             else:
                 small_file_info.append((file_path,file_hash,table_name,file_size))
-                FILE_TRIED_TIMES[file_path]=5
+                FILE_TRIED_TIMES[file_path]=10
         if not (len(ALL_IPS_N_SPEED)):
             log("No client alive having any of the files",2)
             return False
 
-        RETRY_DOWNLOADS=[]
+        # Thread safe
+        RETRY_DOWNLOADS=queue.Queue()
+
         TOTAL_SPEED=sum([speed for ip,speed in ALL_IPS_N_SPEED])+1e-9
         log(f"TOTAL_SPEED: {int(TOTAL_SPEED/(10**6))} MBps  from {len(ALL_IPS_N_SPEED)} ips")
 
@@ -312,8 +321,10 @@ class DOWNLOAD_FILE_CLASS:
             IP_LOCK_N_FAILURE[ip]=[MAX_CONCURRENT_DOWNLOAD_TO_SINGLE_IP,0]
             if speed>=HIGH_SPEED_THRESHOLD:
                 heapq.heappush(high_speed_priority_queue,(-speed,1,ip))
+                HIGH_SPEED_IPS.add(ip)
             else:
                 heapq.heappush(low_speed_priority_queue,(-speed,1,ip))
+                LOW_SPEED_IPS.add(ip)
                 SUM_LOW_SPEEDS+=speed
         if len(low_speed_priority_queue):
             AVG_LOW_SPEEDS=SUM_LOW_SPEEDS/len(low_speed_priority_queue)
@@ -362,6 +373,24 @@ class DOWNLOAD_FILE_CLASS:
             print('\r' + progress_str + estimated_time_str, end='')
 
         class LOCKS:
+            def access_SEG_DONE_CNT(file_path,fetch=False):
+                nonlocal SEG_DONE_CNT
+                SEG_DONE_CNT_lock.acquire()
+                if fetch:
+                    if file_path in SEG_DONE_CNT:
+                        SEG_DONE_CNT_lock.release()
+                        return SEG_DONE_CNT[file_path]
+                    else:
+                        SEG_DONE_CNT_lock.release()
+                        return 0
+                if file_path:
+                    if file_path in SEG_DONE_CNT:
+                        SEG_DONE_CNT[file_path]+=1
+                    else:
+                        SEG_DONE_CNT[file_path]=1
+                SEG_DONE_CNT_lock.release()
+                return
+                
             def access_FILE_WAIT_BEFORE_RETRY(file_path):
                 nonlocal FILE_WAIT_BEFORE_RETRY
                 FILE_WAIT_BEFORE_RETRY_lock.acquire()
@@ -387,7 +416,7 @@ class DOWNLOAD_FILE_CLASS:
                 nonlocal FILE_TRIED_TIMES
                 FILE_TRIED_TIMES_lock.acquire()
                 if file_path not in FILE_TRIED_TIMES:
-                    FILE_TRIED_TIMES[file_path]=5
+                    FILE_TRIED_TIMES[file_path]=10
                 if check:
                     if FILE_TRIED_TIMES[file_path]<=0:
                         FILE_TRIED_TIMES_lock.release()
@@ -487,7 +516,7 @@ class DOWNLOAD_FILE_CLASS:
                 LOCKS.heapify_high_speed_priority_queue()
                 return True
             
-            def access_ALL_IPS_N_SPEED(ip_to_rem,speed=None,check=False,ips_check=False):
+            def access_ALL_IPS_N_SPEED(ip_to_rem,speed=None,check=False,ips_check=False,is_ip_deleted=False):
                 nonlocal ALL_IPS_N_SPEED
                 ALL_IPS_N_SPEED_lock.acquire()
                 if check:
@@ -496,6 +525,15 @@ class DOWNLOAD_FILE_CLASS:
                         return True
                     ALL_IPS_N_SPEED_lock.release()
                     return False
+                
+                if is_ip_deleted:
+                    if len(ALL_IPS_N_SPEED):
+                        for ip,speed in ALL_IPS_N_SPEED:
+                            if ip==is_ip_deleted:
+                                ALL_IPS_N_SPEED_lock.release()
+                                return False
+                    ALL_IPS_N_SPEED_lock.release()
+                    return True
                 
                 if ips_check:
                     no_ips_live=True
@@ -594,7 +632,13 @@ class DOWNLOAD_FILE_CLASS:
                         high_speed_priority_queue_lock.release()
                         return True,ip
                 high_speed_priority_queue_lock.release()
-                return False,None
+
+                no_live_ip_in_ips=True
+                for ip in ips:
+                    if not LOCKS.access_ALL_IPS_N_SPEED(None,is_ip_deleted=ip) and ip in HIGH_SPEED_IPS:
+                        no_live_ip_in_ips=False
+                        break
+                return False,no_live_ip_in_ips
 
             def access_low_speed_priority_queue(ips,release_ip=None,failure=False):
                 nonlocal low_speed_priority_queue
@@ -619,17 +663,22 @@ class DOWNLOAD_FILE_CLASS:
                         low_speed_priority_queue_lock.release()
                         return True,ip
                 low_speed_priority_queue_lock.release()
-                return False,None
+                no_live_ip_in_ips=True
+                for ip in ips:
+                    if not LOCKS.access_ALL_IPS_N_SPEED(None,is_ip_deleted=ip) and ip in LOW_SPEED_IPS:
+                        no_live_ip_in_ips=False
+                        break
+                return False,no_live_ip_in_ips
                     
         def handle_big_files(file_path,file_hash,table_name,start_byte,end_byte):
-            def segment_download(seg_file_path,file_hash,table_name,start_byte,end_byte,seg_done):
+            def segment_download(seg_file_path,file_hash,table_name,start_byte,end_byte):
                 wait_time=LOCKS.access_FILE_WAIT_BEFORE_RETRY(seg_file_path)
                 time.sleep(wait_time)
                 LOCKS.access_FILE_TRIED_TIMES(seg_file_path)
                 if LOCKS.access_FILE_TRIED_TIMES(seg_file_path,check=True):
                     if os.path.exists(seg_file_path):
                         log(f"File {seg_file_path} already exists")
-                        seg_done.put((seg_file_path,True))
+                        LOCKS.access_SEG_DONE_CNT(file_path)
                         LOCKS.access_DOWNLOADED_SIZE(seg_file_path,end_byte-start_byte+1)
                         LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD(release=True)
                         report_progress()
@@ -639,13 +688,20 @@ class DOWNLOAD_FILE_CLASS:
                     return False
                 if os.path.exists(seg_file_path):
                     log(f"File {seg_file_path} already exists")
-                    seg_done.put((seg_file_path,True))
+                    LOCKS.access_SEG_DONE_CNT(file_path)
                     LOCKS.access_DOWNLOADED_SIZE(seg_file_path,end_byte-start_byte+1)
                     LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD(release=True)
                     report_progress()
                     return True
-            
-                res,ip=LOCKS.access_high_speed_priority_queue(HASH_TO_IP[file_hash])
+
+                res = False
+                while not res:
+                    res,ip=LOCKS.access_high_speed_priority_queue(HASH_TO_IP[file_hash])
+                    if ip and not res:
+                        LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD(release=True)
+                        RETRY_DOWNLOADS.put((seg_file_path,file_hash,table_name,start_byte,end_byte))
+                        return
+                    time.sleep(1)
                 if(res):
                     result= file_download(ip,file_hash,table_name,start_byte,end_byte)
                     LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD(release=True)
@@ -654,31 +710,28 @@ class DOWNLOAD_FILE_CLASS:
                             data=base64.b64decode(result)
                             f.write(data)
                         LOCKS.access_high_speed_priority_queue(HASH_TO_IP[file_hash],release_ip=ip)
-                        seg_done.put((seg_file_path,True))
+                        LOCKS.access_SEG_DONE_CNT(file_path)
                         LOCKS.access_DOWNLOADED_SIZE(seg_file_path,end_byte-start_byte+1)
                         report_progress()
                     else:
                         log(f"Unable to download {file_hash} from {ip}",1)
                         log(f"Retrying {file_hash} from {ip}",1)
                         LOCKS.access_high_speed_priority_queue(None,release_ip=ip,failure=True)
-                        RETRY_DOWNLOADS.append((seg_file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
-                        seg_done.put((seg_file_path,False))
+                        RETRY_DOWNLOADS.put((seg_file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
                 else:
-                    RETRY_DOWNLOADS.append((file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
-                    seg_done.put((seg_file_path,False))
+                    RETRY_DOWNLOADS.put((file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
 
             threads=[]
             segments=[]
 
-            # queue.Queue() is thread safe
-            seg_done=queue.Queue()
             seg_num=0
             for break_num in range(start_byte,end_byte+1,BREAK_DOWNLOAD_WHEN_SIZE_EXCEED):
                 file_dir=TMP_DOWNLOAD_DIR
                 seg_file_path=os.path.join(file_dir,(file_hash+"_"+str(seg_num)+".dat"))
                 seg_end_byte=min(break_num+BREAK_DOWNLOAD_WHEN_SIZE_EXCEED-1,end_byte)
-                LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD()
-                thread = threading.Thread(target=segment_download,args=(seg_file_path,file_hash,table_name,break_num,seg_end_byte,seg_done))
+                while not LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD():
+                    time.sleep(2)
+                thread = threading.Thread(target=segment_download,args=(seg_file_path,file_hash,table_name,break_num,seg_end_byte))
                 thread.start()
                 threads.append(thread)
                 segments.append(seg_file_path)
@@ -687,16 +740,11 @@ class DOWNLOAD_FILE_CLASS:
             for thread in threads:
                 thread.join()
 
-            seg_total_done=0
-            while not seg_done.empty():
-                _, done = seg_done.get()
-                if done:
-                    seg_total_done+=1
-
+            seg_total_done=LOCKS.access_SEG_DONE_CNT(file_path,fetch=True)
             if seg_total_done!=seg_num:
                 log(f"Unable to download {file_hash}",1)
                 log(f"Retrying {file_hash}",1)
-                RETRY_DOWNLOADS.append((file_path,file_hash,table_name,file_size,start_byte,end_byte))
+                RETRY_DOWNLOADS.put((file_path,file_hash,table_name,file_size,start_byte,end_byte))
                 return
             
             # merge segments
@@ -708,19 +756,19 @@ class DOWNLOAD_FILE_CLASS:
                             if(seg_num>1):
                                 os.remove(seg_path)
                     except:
-                        RETRY_DOWNLOADS.append((file_path,file_hash,table_name,file_size,start_byte,end_byte))
+                        RETRY_DOWNLOADS.put((file_path,file_hash,table_name,file_size,start_byte,end_byte))
                         return False
             return True
         
         def handle_small_files(file_path,file_hash,table_name,start_byte,end_byte):
-            def small_file_segment_download(seg_file_path,file_hash,table_name,start_byte,end_byte,seg_done):
+            def small_file_segment_download(seg_file_path,file_hash,table_name,start_byte,end_byte):
                 wait_time=LOCKS.access_FILE_WAIT_BEFORE_RETRY(seg_file_path)
                 time.sleep(wait_time)
                 LOCKS.access_FILE_TRIED_TIMES(seg_file_path)
                 if LOCKS.access_FILE_TRIED_TIMES(seg_file_path,check=True):
                     if os.path.exists(seg_file_path):
                         log(f"File {seg_file_path} already exists")
-                        seg_done.put((seg_file_path,True))
+                        LOCKS.access_SEG_DONE_CNT(file_path)
                         LOCKS.access_DOWNLOADED_SIZE(seg_file_path,end_byte-start_byte+1)
                         LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD(release=True)
                         report_progress()
@@ -735,17 +783,36 @@ class DOWNLOAD_FILE_CLASS:
                     LOCKS.access_MAX_CONCURRENT_LOW_SPEED_DOWNLOAD(release=True)
                     LOCKS.access_map_high_speed_ip_usage(HASH_TO_IP[file_hash])
                     report_progress()
-                    seg_done.put((seg_file_path,True))
+                    LOCKS.access_SEG_DONE_CNT(file_path)
                     return True
                 CHANGED_TO_HIGH_SPEED=False
+                FORCE_HIGH_SPEED=True
+                for ip in HASH_TO_IP[file_hash]:
+                    if ip in LOW_SPEED_IPS:
+                        FORCE_HIGH_SPEED=False
+                        break
                 accessible_ips=LOCKS.access_map_high_speed_ip_usage(None,check_free_ips=HASH_TO_IP[file_hash])
-                if accessible_ips:
+                if accessible_ips or FORCE_HIGH_SPEED:
                     CHANGED_TO_HIGH_SPEED=True
                     LOCKS.access_MAX_CONCURRENT_LOW_SPEED_DOWNLOAD(release=True)
                     LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD()
-                    res,ip=LOCKS.access_high_speed_priority_queue(accessible_ips)
+                    res = False
+                    while not res:
+                        res,ip=LOCKS.access_high_speed_priority_queue(HASH_TO_IP[file_hash])
+                        if ip and not res:
+                            LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD(release=True)
+                            RETRY_DOWNLOADS.put((seg_file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
+                            return
+                        time.sleep(1)
                 else:
-                    res,ip=LOCKS.access_low_speed_priority_queue(HASH_TO_IP[file_hash])
+                    res = False
+                    while not res:
+                        res,ip=LOCKS.access_low_speed_priority_queue(HASH_TO_IP[file_hash])
+                        if ip:
+                            LOCKS.access_MAX_CONCURRENT_LOW_SPEED_DOWNLOAD(release=True)
+                            RETRY_DOWNLOADS.put((seg_file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
+                            return
+                        time.sleep(0.1)
                 if(res):
                     result= file_download(ip,file_hash,table_name,start_byte,end_byte)
                     LOCKS.access_MAX_CONCURRENT_LOW_SPEED_DOWNLOAD(release=True)
@@ -757,7 +824,7 @@ class DOWNLOAD_FILE_CLASS:
                             LOCKS.access_high_speed_priority_queue(accessible_ips,release_ip=ip)
                         else:
                             LOCKS.access_low_speed_priority_queue(HASH_TO_IP[file_hash],release_ip=ip)
-                        seg_done.put((seg_file_path,True))
+                        LOCKS.access_SEG_DONE_CNT(file_path)
                         LOCKS.access_DOWNLOADED_SIZE(seg_file_path,end_byte-start_byte+1)
                         report_progress()
                     else:
@@ -767,24 +834,20 @@ class DOWNLOAD_FILE_CLASS:
                             LOCKS.access_high_speed_priority_queue(None,release_ip=ip,failure=True)
                         else:
                             LOCKS.access_low_speed_priority_queue(HASH_TO_IP[file_hash],release_ip=ip,failure=True)
-                        RETRY_DOWNLOADS.append((seg_file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
-                        seg_done.put((seg_file_path,False))
+                        RETRY_DOWNLOADS.put((seg_file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
                 else:
-                    RETRY_DOWNLOADS.append((seg_file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
-                    seg_done.put((seg_file_path,False))
-
+                    RETRY_DOWNLOADS.put((seg_file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
             report_progress()
             threads=[]
             segments=[]
-            # queue.Queue() is thread safe
-            seg_done=queue.Queue()
             seg_num=0
             for break_num in range(start_byte,end_byte+1,SLOW_SPEED_BREAK_DOWNLOAD_WHEN_SIZE_EXCEED):
                 file_dir=TMP_DOWNLOAD_DIR
                 seg_file_path=os.path.join(file_dir,(file_hash+"_"+str(seg_num)+".dat"))
                 seg_end_byte=min(break_num+SLOW_SPEED_BREAK_DOWNLOAD_WHEN_SIZE_EXCEED-1,end_byte)
-                LOCKS.access_MAX_CONCURRENT_LOW_SPEED_DOWNLOAD()
-                thread = threading.Thread(target=small_file_segment_download,args=(seg_file_path,file_hash,table_name,break_num,seg_end_byte,seg_done))
+                while not LOCKS.access_MAX_CONCURRENT_LOW_SPEED_DOWNLOAD():
+                    time.sleep(0.1)
+                thread = threading.Thread(target=small_file_segment_download,args=(seg_file_path,file_hash,table_name,break_num,seg_end_byte))
                 thread.start()
                 threads.append(thread)
                 segments.append(seg_file_path)
@@ -792,19 +855,15 @@ class DOWNLOAD_FILE_CLASS:
 
             for thread in threads:
                 thread.join()
-
-            seg_total_done=0
-            while not seg_done.empty():
-                _, done = seg_done.get()
-                if done:
-                    seg_total_done+=1
+            
+            seg_total_done=LOCKS.access_SEG_DONE_CNT(file_path,fetch=True)
 
             if seg_total_done!=seg_num:
                 log(f"Unable to download {file_hash}",1)
                 log(f"Retrying {file_hash}",1)
-                RETRY_DOWNLOADS.append((file_path,file_hash,table_name,file_size,start_byte,end_byte))
+                RETRY_DOWNLOADS.put((file_path,file_hash,table_name,file_size,start_byte,end_byte))
                 return        
-
+            
             # merge segments
             with open (file_path,"wb") as f:
                 for seg_path in segments:
@@ -814,9 +873,8 @@ class DOWNLOAD_FILE_CLASS:
                             if seg_num>1:
                                 os.remove(seg_path)
                     except:
-                        RETRY_DOWNLOADS.append((file_path,file_hash,table_name,file_size,start_byte,end_byte))
+                        RETRY_DOWNLOADS.put((file_path,file_hash,table_name,file_size,start_byte,end_byte))
                         return False
-
             return True         
 
         def handle_thread(file_path,file_hash,table_name,file_size,start_byte=None,end_byte=None):
@@ -845,12 +903,13 @@ class DOWNLOAD_FILE_CLASS:
                 return True
             if (LOCKS.access_ALL_IPS_N_SPEED(None,None,ips_check=HASH_TO_IP[file_hash])):
                 log(f"Unable to download {file_hash} no ips available",2)
+                LOCKS.access_FAILED_DOWNLOADS(file_path)
                 return
             send_to_low_speed=False
             ips_len=len(HASH_TO_IP[file_hash])
             if((((file_size)/(AVG_LOW_SPEEDS*ips_len +1e-9))<(ESTIMATED_TIME/2)) and (LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD(curr_cnt=True)<=0)):
                 send_to_low_speed=True
-            if (not(len(low_speed_priority_queue) or ((file_size>SIZE_AFTER_WHICH_FILE_IS_CONSIDERED_BIG) and LEN_high_speed_priority_queue and (not send_to_low_speed)))):
+            if ((not len(small_file_info)) or((file_size>SIZE_AFTER_WHICH_FILE_IS_CONSIDERED_BIG) and LEN_high_speed_priority_queue and (not send_to_low_speed))):
                 if start_byte and end_byte:
                     handle_big_files(file_path,file_hash,table_name,start_byte,end_byte)
                 else:
@@ -861,6 +920,8 @@ class DOWNLOAD_FILE_CLASS:
                 else:
                     handle_small_files(file_path,file_hash,table_name,0,file_size-1)
 
+        SEG_DONE_CNT={}
+        SEG_DONE_CNT_lock=threading.Lock()
         log("Starting download.........................")
         # high speed downloads
         threads=[]
@@ -871,11 +932,11 @@ class DOWNLOAD_FILE_CLASS:
                 threads.append(thread)
 
         # retry high speed downloads
-        if len(RETRY_DOWNLOADS):
-            for file_path,file_hash,table_name,file_size,start_byte,end_byte in RETRY_DOWNLOADS:
-                thread = threading.Thread(target=handle_thread,args=(file_path,file_hash,table_name,file_size,start_byte,end_byte))
-                thread.start()
-                threads.append(thread)
+        while not(RETRY_DOWNLOADS.empty()):
+            file_path,file_hash,table_name,file_size,start_byte,end_byte = RETRY_DOWNLOADS.get()
+            thread = threading.Thread(target=handle_thread,args=(file_path,file_hash,table_name,file_size,start_byte,end_byte))
+            thread.start()
+            threads.append(thread)
 
         # low speed downloads
         if len(small_file_info):
@@ -888,8 +949,8 @@ class DOWNLOAD_FILE_CLASS:
             thread.join()
 
         threads=[]
-        while(RETRY_DOWNLOADS and not(LOCKS.access_ALL_IPS_N_SPEED(None,None,check=True))):
-            file_path,file_hash,table_name,file_size,start_byte,end_byte=RETRY_DOWNLOADS.pop()
+        while(not(RETRY_DOWNLOADS.empty()) and not(LOCKS.access_ALL_IPS_N_SPEED(None,None,check=True))):
+            file_path,file_hash,table_name,file_size,start_byte,end_byte=RETRY_DOWNLOADS.get()
             thread = threading.Thread(target=handle_thread,args=(file_path,file_hash,table_name,file_size,start_byte,end_byte))
             thread.start()
             threads.append(thread)
@@ -900,19 +961,20 @@ class DOWNLOAD_FILE_CLASS:
             log(f"Unable to download all files , following files are not downloaded {FAILED_DOWNLOADS}",2)
             log(f"Please rerun the download again or we can automatically shedule the download for you",2)
             return False
-        elif len(RETRY_DOWNLOADS):
+        elif not(RETRY_DOWNLOADS.empty()):
             file_paths=[file_path for file_path,_,_,_,_,_ in RETRY_DOWNLOADS]
             log(f"Unable to download all files , following files are not downloaded {RETRY_DOWNLOADS}",2)
-            log(f"Please rerun the download again or we can automatically shedule the download for you",2)          
+            log(f"Please rerun the download again or we can automatically shedule the download for you",2) 
+            log(f"Total time taken {time.time()-start_time} seconds",0) 
             return False
         else:
             bar = ('#' * (25) + '-' * ((25 - 25)))
             bar_color = 'green' if 100 >= 50 else 'yellow'
             percent_color = 'cyan'
-            f"Downloading: [{colored(bar, bar_color):<25}] {colored(100, percent_color)}%"
+            print(f"\nDownloading: [{colored(bar, bar_color):<25}] {colored(100, percent_color)}%")
             log("\nDownload complete")
             log(f"Downloaded {file_paths}",0)
-
+            log(f"Total time taken {time.time()-start_time} seconds",0)
             
             # remove .tmp_download files
             tmp_downloads=[]
@@ -981,6 +1043,7 @@ class DOWNLOAD_FILE_CLASS:
                 tree_iterator(child_id)
 
         tree_iterator(root_id)
+        subdb_conn.close()
         log(f"Downloading {len(file_paths)-len(dir_paths)} files using subdb {subdb_filename}",0)
 
         # Check if file_paths are within good_paths
@@ -993,8 +1056,12 @@ class DOWNLOAD_FILE_CLASS:
         for dir in dir_paths:
             DOWNLOAD_FILE_CLASS.dir_create(dir)
 
+        # Implement auto remove after one day old subdb but currently we are are instant removing it
+        os.remove(subdb_dir)
+
         # Handle file downloading
         return DOWNLOAD_FILE_CLASS.handle_download(file_paths,file_sizes,file_hashes,table_names)
+    
         
     @staticmethod
     def main(unique_id,lazy_file_hash,table_name):
@@ -1023,5 +1090,5 @@ class DOWNLOAD_FILE_CLASS:
         
 if __name__ == '__main__':
     # DOWNLOAD_FILE_CLASS.main("5e7350ca-5dd7-40df-9ea5-b2ece85bc4da","50386c5157c9fc0cffab1d53a0e5e5e4",table_name="Normal_Content_Main_Folder")
-     DOWNLOAD_FILE_CLASS.main("5e7350ca-5dd7-40df-9ea5-b2ece85bc4da","719c9b30e27ee56ea2c9733084980e3e",table_name="Normal_Content_Main_Folder")
+     DOWNLOAD_FILE_CLASS.main("5e7350ca-5dd7-40df-9ea5-b2ece85bc4da","1ac2cfd99d503e38d55d35a3a20e65e0",table_name="Normal_Content_Main_Folder")
   

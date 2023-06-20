@@ -108,7 +108,7 @@ def download_file(url, num_segments,filename):
     bar = ('#' * (25) + '-' * ((25 - 25)))
     bar_color = 'green' if 100 >= 50 else 'yellow'
     percent_color = 'cyan'
-    f"Downloading: [{colored(bar, bar_color):<25}] {colored(100, percent_color)}%"
+    print(f"\nDownloading: [{colored(bar, bar_color):<25}] {colored(100, percent_color)}%")
     log("\nDownload complete")
 
     return file_segments

@@ -13,7 +13,7 @@ def file_download(ip, hash,table_name,start_byte=None,end_byte=None):
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             log(f"Connecting to {ip}:{PORT}")
-            s.timeout(60*2)
+            s.settimeout(120)
             s.connect((ip, PORT))
             log(f"Connected")
             js_data = {}

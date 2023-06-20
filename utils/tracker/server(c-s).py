@@ -100,6 +100,8 @@ def handle_client(conn, addr):
             data_to_send['subdb_success']=True
             with open(os.path.join(SUB_DB_PATH, subdb_filename), "rb") as f:
                 subdb_data = f.read()
+            # We can daily remove the subdb for files to be cache but currently instantly removing after sending subdb
+            os.remove(os.path.join(SUB_DB_PATH, subdb_filename))
             subdb_data = base64.b64encode(subdb_data)
             data_to_send['subdb_data']=subdb_data.decode()
         else:
