@@ -46,7 +46,7 @@ def subdb_downloader(unique_id,lazy_file_hash):
             # Receive data from server
             data=b""
             while True:
-                chunk = s.recv(1024)
+                chunk = s.recv(1024*100)
                 if not chunk:
                     break
                 data += chunk

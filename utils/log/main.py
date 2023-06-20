@@ -41,8 +41,8 @@ class DebugModule:
         except IOError:
             print(colored(f"Error: Unable to read file: {self.file_path}", 'red'))
 
-def log(msg, severity_no=0, *args):
-    logger = DebugModule("log.txt")
+def log(msg, severity_no=0, *args,file_name='log.txt'):
+    logger = DebugModule(file_name)
     calling_script_path = os.path.abspath(sys.argv[0])
     root_dir_index = calling_script_path.find("TorrentLAN")
 

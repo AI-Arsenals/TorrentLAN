@@ -1,7 +1,10 @@
 import socket
 import os
 import json
-import base64
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..','..')))
+from utils.log.main import log
 
 CONFIG_CLIENT = "configs/client(c-s).json"
 SERVER_CONFIG="configs/server.json"
@@ -18,13 +21,12 @@ def get_ip_address(address):
 
 def get_ips_and_netmasks(unique_ids):
     ip = get_ip_address(SERVER_ADDR)
-    print(f"Connecting to {ip}")
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            print("Connecting to server")
+            log(f"Connecting to {ip}")
             s.connect((ip, PORT))
-            print("Connected to server")
+            log("Connected to server")
             js_data = {}
             js_data["ip_get"]=True
             js_data["unique_ids"] = unique_ids
@@ -46,7 +48,7 @@ def get_ips_and_netmasks(unique_ids):
             s.close()
         return True,json_returned_data
     except ConnectionRefusedError:
-        print("Server is down")
+        log("Server is down", 2)
         return False,None
 if __name__ == '__main__':
     get_ips_and_netmasks()

@@ -6,6 +6,7 @@ import json
 import base64
 import sqlite3
 import sys
+import select
 
 
 sys.path.append(os.path.abspath(os.path.join(
@@ -21,6 +22,7 @@ HOST = get_intranet_ips()
 PORT = 8890
 
 DATABASE_DIR = "data/.db"
+NODE_file_transfer_log=".node_file_transfer_log"
 CONFIG_FOLDER_LOCATION = "configs/folder_locations.json"
 CONFIG_IDENTITY = "configs/identity.json"
 OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
@@ -28,18 +30,18 @@ OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 HASH_TO_FILE_DIR_CACHE={}
 
 def handle_client(conn, addr):
-    log(f"Connection from {addr}")
+    log(f"Connection from {addr}",file_name=NODE_file_transfer_log)
     data = conn.recv(1024)
     # "<"+ sha256 of "<EOF>"+">"
     if data.endswith(b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"):
         data = data[:-66]  # Remove termination sequence from the data
     else:
-        log(f"Termination sequence not found in data from {addr}")
+        log(f"Termination sequence not found in data from {addr}",severity_no=1,file_name=NODE_file_transfer_log)
         conn.close()
         return
 
     js_data = json.loads(data.decode())
-    log(f"Received data from {addr}: {str(js_data)}")
+    log(f"Received data from {addr}: {str(js_data)}",file_name=NODE_file_transfer_log)
     live_ip_check= js_data.get("live_ip_check", False)
     file_download = js_data.get("file_download", False)
     if live_ip_check:
@@ -57,7 +59,7 @@ def handle_client(conn, addr):
             data_to_send = json.dumps(return_js_data)
             data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
             conn.sendall(data_to_send.encode())
-            log(f"Sent data to {addr}: {str(return_js_data)}")
+            log(f"Sent data to {addr}: {str(return_js_data)}",file_name=NODE_file_transfer_log)
         conn.close()
     
     elif file_download:
@@ -103,13 +105,12 @@ def handle_client(conn, addr):
             
             data_to_send = json.dumps(data_to_send)
             data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
-            log(f"Data Prepared in {time.time()-start_time} seconds")
+            log(f"Data Prepared in {time.time()-start_time} seconds",file_name=NODE_file_transfer_log)
             conn.sendall(data_to_send.encode())
-            log(f"Data Prepared and sent in {time.time()-start_time} seconds")
-
-            log(f"Sent data to {addr}: {str(file_dir)}")
+            log(f"Data Prepared and sent in {time.time()-start_time} seconds",file_name=NODE_file_transfer_log)
+            log(f"Sent data to {addr}: {str(file_dir)}",file_name=NODE_file_transfer_log)
         except Exception as e:
-            log(f"Error while fetching data from database: {e}")
+            log(f"Error while fetching data from database: {e}",severity_no=1,file_name=NODE_file_transfer_log)
             data_to_send = json.dumps(data_to_send)
             data_to_send += "<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
             conn.sendall(json.dumps(data_to_send).encode())
@@ -118,26 +119,23 @@ def handle_client(conn, addr):
 
 
 def start_server():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
+    sockets = []
     for host in HOST:
         try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind((host, PORT))
-            s.listen(5)
-            log("Listening on " + host + ":" + str(PORT) + "...")
+            s.listen(25)
+            sockets.append(s)
+            log("Listening on " + host + ":" + str(PORT) + "...",file_name=NODE_file_transfer_log)
         except Exception as e:
-            log("Error binding to " + host + ": " + str(e))
-        else:
-            break
-
+            log("Error binding to " + host + ": " + str(e),severity_no=2,file_name=NODE_file_transfer_log)
+    
     while True:
-        conn, addr = s.accept()
-
-        # Multi-thread
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start()
-
+        readable, _, _ = select.select(sockets, [], [])
+        for sock in readable:
+            conn, addr = sock.accept()
+            threading.Thread(target=handle_client, args=(conn, addr))
 
 if __name__ == '__main__':
     start_server()

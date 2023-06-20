@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..
 from utils.log.main import log
 
 def get_intranet_ips():
-    intranet_ips = []
+    intranet_ips = ['127.0.0.1']
     interfaces = netifaces.interfaces()
 
     for interface in interfaces:

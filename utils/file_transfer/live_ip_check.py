@@ -11,6 +11,9 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 from utils.log.main import log
 
+LIVE_IP_CHECK_CONFIG= "configs/live_ip_check_config.json"
+SPEED_TEST_DATA_SIZE = json.load(open(LIVE_IP_CHECK_CONFIG))["speed_test_data_size"]
+
 PORT = 8890
 
 import socket
@@ -34,7 +37,7 @@ def live_ip_checker(unique_id, ip):
             start_time = time.time()
             data = b""
             while True:
-                chunk = s.recv(1024)
+                chunk = s.recv(1024+SPEED_TEST_DATA_SIZE)
                 if not chunk:
                     break
                 data+=chunk
@@ -63,4 +66,4 @@ def live_ip_checker(unique_id, ip):
 
 
 if __name__ == '__main__':
-    print(live_ip_checker("5e7350ca-5dd7-40df-9ea5-b2ece85bc4da",'127.0.0.1'))
+    log(live_ip_checker("5e7350ca-5dd7-40df-9ea5-b2ece85bc4da",'127.0.0.1'))

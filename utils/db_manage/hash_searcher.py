@@ -57,4 +57,4 @@ def hash_list_searcher(hashes):
     return HASH_TO_UNIQUE_IDS
 
 if __name__ == "__main__":
-    print(hash_list_searcher(["2237ebf0d304cc26b9a2537c515a6b8e888c00f628e099e6e3f408beec89e11b"]))
+    log(hash_list_searcher(["2237ebf0d304cc26b9a2537c515a6b8e888c00f628e099e6e3f408beec89e11b"]))

@@ -1,15 +1,16 @@
 import socket
-import threading
+import select
 import os
 import json
 import base64
-import datetime
+import threading
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 from utils.tracker.shared_util.intranet_ips_grabber import get_intranet_ips
 from utils.db_manage.hash_searcher import hash_list_searcher
 from utils.db_manage.subdb_maker_with_node import subdb_maker
+from utils.log.main import log
 
 HOST = get_intranet_ips()
 PORT = 8888
@@ -19,28 +20,11 @@ ID_to_IP = "data/id_to_ip.json"
 SERVER_LOGS=".server_log"
 SUB_DB_PATH = "data/.db/sub_db"
 
-def logger_server(message, severity_no=0):
-    severities={0:"info",1:"warning",2:"error"}
-    severity=severities.get(severity_no,"info")
-    print(message)
-    try:
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        log_message = "[{}] [{}] {}\n".format(current_time, severity.upper(), message)
-        if not os.path.exists(SERVER_LOGS):
-            with open(SERVER_LOGS, "w") as f:
-                f.write("")
-        with open(SERVER_LOGS, 'a') as file:
-            file.write(log_message)
-
-        # print(f"Logged message with severity '{severity}' to file: {self.file_path}")
-    except IOError:
-        print("Error: Unable to write to file: ",SERVER_LOGS)
-
 def handle_client(conn, addr):
-    logger_server("Connected by "+ str(addr))
+    log(f"Connected by {addr}",file_name=SERVER_LOGS)
     data=b""
     while True:
-        chunk = conn.recv(1024)
+        chunk = conn.recv(1024*100)
         if not chunk:
             break
         data += chunk
@@ -49,7 +33,7 @@ def handle_client(conn, addr):
             break
 
     js_data = json.loads(data.decode())
-    logger_server("js data : "+str(js_data))
+    log(f"js_data: {js_data}",severity_no=-1,file_name=SERVER_LOGS)
     ip_reg=js_data.get("ip_reg",False)
     ip_get=js_data.get("ip_get",False)
     db_update=js_data.get("db_update",False)
@@ -57,7 +41,7 @@ def handle_client(conn, addr):
     subdb_download=js_data.get("subdb_download",False)
 
     if ip_get:
-        logger_server("Querying a IP")
+        log(f"Querying a IP",file_name=SERVER_LOGS)
         unique_ids = js_data['unique_ids']
         with open(ID_to_IP) as f:
             id_to_ip = json.load(f)
@@ -70,7 +54,7 @@ def handle_client(conn, addr):
         conn.close()
 
     elif ip_reg:
-        logger_server("IP registration")
+        log("IP registration",file_name=SERVER_LOGS)
         unique_id = js_data['unique_id']
         ip = js_data['ip']
         netmask=js_data['netmask']
@@ -84,7 +68,7 @@ def handle_client(conn, addr):
             with open(ID_to_IP, 'w') as f:
                 json.dump(id_to_ip, f)
     elif db_update:
-        logger_server("DB update")
+        log("DB update",file_name=SERVER_LOGS)
         unique_id = js_data['unique_id']
         db_data = base64.b64decode(js_data['db_data'])
         with open(os.path.join(DB_LOCATION, unique_id + ".db"), "wb") as f:
@@ -92,7 +76,7 @@ def handle_client(conn, addr):
         conn.close()
 
     elif hash_to_id:
-        logger_server("Hash to UNIQUE ID")
+        log("Hash to UNIQUE ID",file_name=SERVER_LOGS)
         hashes = js_data['hashes']
         data_to_send = hash_list_searcher(hashes)
         data_to_send = json.dumps(data_to_send).encode()
@@ -101,7 +85,7 @@ def handle_client(conn, addr):
         conn.close()
         
     elif subdb_download:
-        logger_server("SubDB download")
+        log("SubDB download",file_name=SERVER_LOGS)
         unique_id = js_data['unique_id']
         lazy_file_hash = js_data['lazy_file_hash']
         subdb_filename=unique_id + "_" + lazy_file_hash + ".db"
@@ -115,35 +99,33 @@ def handle_client(conn, addr):
             subdb_data = base64.b64encode(subdb_data)
             data_to_send['subdb_data']=subdb_data.decode()
         else:
-            logger_server("SubDB download failed")
+            log("SubDB download failed",severity_no=2,file_name=SERVER_LOGS)
         data_to_send = json.dumps(data_to_send).encode()
         data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>" #"<"+ sha256 of "<EOF>"+">"
         conn.sendall(data_to_send)
         conn.close()
     else:
-        logger_server("Unknown request")
+        log("Unknown request",severity_no=2,file_name=SERVER_LOGS)
         conn.close()
 
 def start_server():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
+    sockets = []
     for host in HOST:
         try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind((host, PORT))
             s.listen(250)
-            logger_server("Listening on " + host + ":" + str(PORT) + "...")
+            sockets.append(s)
+            log("Listening on " + host + ":" + str(PORT) + "...",file_name=SERVER_LOGS)
         except Exception as e:
-            logger_server("Error binding to " + host + ": " + str(e))
-        else:
-            break
-
+            log("Error binding to " + host + ": " + str(e),severity_no=2,file_name=SERVER_LOGS)
+    
     while True:
-        conn, addr = s.accept()
-
-        # Multi-thread
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start()
+        readable, _, _ = select.select(sockets, [], [])
+        for sock in readable:
+            conn, addr = sock.accept()
+            threading.Thread(target=handle_client, args=(conn, addr)).start()
 
 if __name__ == '__main__':
     start_server()

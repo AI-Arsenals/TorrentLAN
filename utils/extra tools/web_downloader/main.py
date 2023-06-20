@@ -61,7 +61,7 @@ def download_segment(url, start_byte, end_byte, file, TOTAL_SIZE, FILE_SIZE_SHOW
         print('\r' + progress_str + estimated_time_str, end='')
     
     with open(file, 'wb') as file:
-        for chunk in response.iter_content(chunk_size=1024*1024):
+        for chunk in response.iter_content(chunk_size=1024*1024*5):
             file.write(chunk)
             if FILE_SIZE_SHOW:
                 access_downloaded_size(len(chunk))

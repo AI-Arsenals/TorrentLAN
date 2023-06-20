@@ -50,4 +50,4 @@ def file_download(ip, hash,table_name,start_byte=None,end_byte=None):
 
 
 if __name__ == '__main__':
-    print(file_download("127.0.0.1","fae379b2920b02b4c85110eb4d3f42a9997e669c96b15423f9af8cdfd9775098","Normal_Content_Main_Folder"))
+    log(file_download("127.0.0.1","fae379b2920b02b4c85110eb4d3f42a9997e669c96b15423f9af8cdfd9775098","Normal_Content_Main_Folder"))

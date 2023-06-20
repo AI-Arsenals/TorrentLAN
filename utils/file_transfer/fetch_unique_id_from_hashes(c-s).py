@@ -41,7 +41,7 @@ def fetch_unique_id_from_hashes(hashes):
             # Receive data from server
             data=b""
             while True:
-                chunk = s.recv(1024)
+                chunk = s.recv(1024*500)
                 if not chunk:
                     break
                 data += chunk
