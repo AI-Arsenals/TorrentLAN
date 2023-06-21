@@ -80,9 +80,6 @@ def handle_client(conn, addr):
 
         data_to_send = {}
         data_to_send["found"] = False
-        # Find file path in file_tree.db
-        with open(CONFIG_FOLDER_LOCATION) as f:
-            data = json.load(f)
 
         try :
             found_in_db=False
@@ -90,6 +87,9 @@ def handle_client(conn, addr):
             if hash in HASH_TO_FILE_DIR_CACHE:
                 hash_in_cache=True
             if not hash_in_cache:
+                # Find file path in file_tree.db
+                with open(CONFIG_FOLDER_LOCATION) as f:
+                    data = json.load(f)
                 db_con=sqlite3.connect(os.path.join(DATABASE_DIR,"file_tree.db"))
                 cursor=db_con.cursor()
                 cursor.execute(f"SELECT * FROM {table_name} WHERE hash = '{hash}'")
@@ -100,6 +100,15 @@ def handle_client(conn, addr):
                     file_dir=meta_data["Path"]
                     found_in_db=True
                     HASH_TO_FILE_DIR_CACHE[hash]=file_dir
+                    if start_byte and end_byte:
+                        with open(file_dir, "rb") as file:
+                            file.seek(start_byte)
+                            data = file.read(end_byte - start_byte + 1)
+                            b64_data = base64.b64encode(data)
+                    else:
+                        b64_data = base64.b64encode(open(file_dir, "rb").read())
+                    data_to_send["found"] = True
+                    data_to_send["file_data"] = b64_data.decode()
             elif found_in_db or hash_in_cache:
                 file_dir=HASH_TO_FILE_DIR_CACHE[hash]
                 if start_byte and end_byte:

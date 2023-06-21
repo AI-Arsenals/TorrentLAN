@@ -137,15 +137,15 @@ class HASH_TO_IP_CLASS:
             
     @staticmethod
     def HASHES_TO_IDS(hashes):
-        UNIQUE_IDS=[]
+        UNIQUE_IDS=set()
         if not hashes:
             log("No hashes to download either server or clients having files are down",2)
             return
         for hash in hashes:
             unique_ids=hashes[hash]
             for unique_id in unique_ids:
-                UNIQUE_IDS.append(unique_id)
-        return UNIQUE_IDS
+                UNIQUE_IDS.add(unique_id)
+        return list(UNIQUE_IDS)
 
     @staticmethod
     def hash_to_ip(hashes):
@@ -212,12 +212,11 @@ class DOWNLOAD_FILE_CLASS:
         return all_path_good
     
     @staticmethod
-    def dir_create(file_path):
+    def dir_create(folder_path):
         """
         Create directory structure
         """
-        if not os.path.exists(file_path):
-            os.makedirs(file_path)
+        os.makedirs(folder_path, exist_ok=True)
     
     @staticmethod
     def handle_download(file_paths, file_sizes, file_hashes,table_names):
@@ -238,6 +237,10 @@ class DOWNLOAD_FILE_CLASS:
 
         file_info = [(file_path, int(file_size), file_hash, table_name) for file_path, file_size, file_hash, table_name in zip(file_paths, file_sizes, file_hashes, table_names) if file_hash]
         file_info = sorted(file_info, key=lambda x: x[1], reverse=True)
+        if not file_info:
+            log("NO File is with anyone who is up ,DOWNLOAD FAILED",2)
+            return False
+        
         TOTAL_SIZE = sum(file_size for _, file_size, _, _ in file_info)
         DOWNLOADED_SIZE = 0
         DOWNLOADED_FILE_PATHS=set()
@@ -279,10 +282,10 @@ class DOWNLOAD_FILE_CLASS:
             FILE_WAIT_BEFORE_RETRY[file_path]=time.time()
             if int(file_size) > SIZE_AFTER_WHICH_FILE_IS_CONSIDERED_BIG:
                 big_file_info.append((file_path,file_hash,table_name,file_size))
-                FILE_TRIED_TIMES[file_path]=5
+                FILE_TRIED_TIMES[file_path]=10
             else:
                 small_file_info.append((file_path,file_hash,table_name,file_size))
-                FILE_TRIED_TIMES[file_path]=10
+                FILE_TRIED_TIMES[file_path]=15
         if not (len(ALL_IPS_N_SPEED)):
             log("No client alive having any of the files",2)
             return False
@@ -416,7 +419,7 @@ class DOWNLOAD_FILE_CLASS:
                 nonlocal FILE_TRIED_TIMES
                 FILE_TRIED_TIMES_lock.acquire()
                 if file_path not in FILE_TRIED_TIMES:
-                    FILE_TRIED_TIMES[file_path]=10
+                    FILE_TRIED_TIMES[file_path]=15
                 if check:
                     if FILE_TRIED_TIMES[file_path]<=0:
                         FILE_TRIED_TIMES_lock.release()
@@ -938,6 +941,11 @@ class DOWNLOAD_FILE_CLASS:
             thread.start()
             threads.append(thread)
 
+        if not len(LOW_SPEED_IPS):
+            for thread in threads:
+                thread.join()
+            threads=[]
+
         # low speed downloads
         if len(small_file_info):
             for file_path,file_hash,table_name,file_size in small_file_info:
@@ -960,12 +968,17 @@ class DOWNLOAD_FILE_CLASS:
         if len(FAILED_DOWNLOADS):
             log(f"Unable to download all files , following files are not downloaded {FAILED_DOWNLOADS}",2)
             log(f"Please rerun the download again or we can automatically shedule the download for you",2)
+            log(f"Failed download can also mean that the node has deleted the file and not updated the server yet",1)
             return False
         elif not(RETRY_DOWNLOADS.empty()):
-            file_paths=[file_path for file_path,_,_,_,_,_ in RETRY_DOWNLOADS]
-            log(f"Unable to download all files , following files are not downloaded {RETRY_DOWNLOADS}",2)
+            file_paths=[]
+            while not(RETRY_DOWNLOADS.empty()):
+                file_path,file_hash,table_name,file_size,start_byte,end_byte = RETRY_DOWNLOADS.get()
+                file_paths.append(file_path)
+            log(f"Unable to download all files , following files are not downloaded {file_paths}",2)
             log(f"Please rerun the download again or we can automatically shedule the download for you",2) 
             log(f"Total time taken {time.time()-start_time} seconds",0) 
+            log(f"Failed download can also mean that the node has deleted the file and not updated the server yet",1)
             return False
         else:
             bar = ('#' * (25) + '-' * ((25 - 25)))
@@ -1012,7 +1025,7 @@ class DOWNLOAD_FILE_CLASS:
         dir_paths=[]
 
         root_id=row_data[0]
-
+        
         def tree_iterator(id):
             subdb_cursor.execute(
                 f"SELECT * FROM {subdb_table_name} WHERE id = ?;", (id,))
@@ -1023,6 +1036,7 @@ class DOWNLOAD_FILE_CLASS:
             if is_file:
                 file_paths.append(meta_data["Path"])
                 file_sizes.append(meta_data["Size"])
+                dir_paths.append(os.path.dirname(meta_data["Path"]))
                 file_hashes.append(row_data[8])
             else:
                 file_paths.append(meta_data["Path"])
@@ -1056,11 +1070,18 @@ class DOWNLOAD_FILE_CLASS:
         for dir in dir_paths:
             DOWNLOAD_FILE_CLASS.dir_create(dir)
 
-        # Implement auto remove after one day old subdb but currently we are are instant removing it
-        os.remove(subdb_dir)
+        if len(file_paths)-len(dir_paths)==0:
+            log(f"No files to download all were folders")
+            log(f"Successfully created folder structure")
+            os.remove(subdb_dir)
+            return True
 
         # Handle file downloading
-        return DOWNLOAD_FILE_CLASS.handle_download(file_paths,file_sizes,file_hashes,table_names)
+        res= DOWNLOAD_FILE_CLASS.handle_download(file_paths,file_sizes,file_hashes,table_names)
+        if (res):
+            os.remove(subdb_dir)
+        
+        return res
     
         
     @staticmethod
@@ -1073,7 +1094,7 @@ class DOWNLOAD_FILE_CLASS:
         result=subdb_downloader(unique_id,lazy_file_hash)
 
         if(not result):
-            log(f"Unable to download subdb for {unique_id}",2)
+            log(f"Unable to download subdb for unique_id {unique_id}, lazy_file_hash {lazy_file_hash}, table_name {table_name}",2)
             return False
         
         subdb_filename=result

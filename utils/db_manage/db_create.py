@@ -103,11 +103,13 @@ def create_table(conn, table_name):
             unique_id TEXT,
             hash TEXT,
             FOREIGN KEY (parent_id) REFERENCES {table_name} (id),
-            FOREIGN KEY (child_id) REFERENCES {table_name} (id)
+            FOREIGN KEY (child_id) REFERENCES {table_name} (id),
+            CONSTRAINT idx_hash UNIQUE (hash),
+            CONSTRAINT idx_lazy_file_check_hash UNIQUE (lazy_file_check_hash)
         );
     '''
-    formatted_query = create_table_query.format(table_name=table_name)
-    conn.execute(formatted_query)
+    create_table_query = create_table_query.format(table_name=table_name)
+    conn.execute(create_table_query)
 
 
 def insert_item(conn, table_name, name, is_file, parent_id, child_id, metadata, lazy_file_check_hash, unique_id, hash_value):
@@ -237,6 +239,8 @@ def process_folder(conn, table_name, path, parent_id=None):
             if len(child_id_vals) > 0:
                 metadata['Size'] += child_size
                 full_row_update_at_id(conn, table_name, item_id, None, None, None, child_id_vals, metadata, None, None, None)
+            else:
+                full_row_update_at_id(conn, table_name, item_id, None, None, None, None, metadata, None, None, None)
     return child_ids,SIZE
 
 def remove_deleted_files(conn, table_name, path):

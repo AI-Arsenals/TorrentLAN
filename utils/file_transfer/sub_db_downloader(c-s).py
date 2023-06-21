@@ -26,6 +26,11 @@ SUB_DB_PATH = "data/.db/sub_db_downloaded"
 PORT = 8888
 
 def subdb_downloader(unique_id,lazy_file_hash):
+    subdb_filename=unique_id + "_" + lazy_file_hash + ".db"
+    if os.path.exists(os.path.join(SUB_DB_PATH,subdb_filename)):
+        log(f"{subdb_filename} already exists")
+        log(f"Using pre existing subdb. If the node has updated its content and you want that then you need to delete the file {os.path.abspath(os.path.join(SUB_DB_PATH,subdb_filename))}",1)
+        return subdb_filename
     if not os.path.exists(SUB_DB_PATH):
         os.makedirs(SUB_DB_PATH)
     ip = get_ip_address(SERVER_ADDR)
@@ -65,6 +70,7 @@ def subdb_downloader(unique_id,lazy_file_hash):
                 return subdb_filename
             else:
                 log(f"Subdb download failed",2)
+                log(f"It can be due to node not having the file or server is not updated by node yet",1)
                 s.close()
                 return False
     except ConnectionRefusedError:
