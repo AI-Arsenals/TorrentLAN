@@ -5,8 +5,12 @@ import hashlib
 import time
 import platform
 import datetime
+import sys
 
-SOFTWARE_DIR = os.getcwd()
+sys.path.append(os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '..', '..')))
+from utils.log.main import log
+
 DATABASE_DIR = "data/.db"
 DB_NAME = "file_tree.db"
 CONFIG_FOLDER_LOCATION = "configs/folder_locations.json"
@@ -53,7 +57,7 @@ def check_file_in_db(conn, lazy_file_hash, table_name):
     check_query = check_query.format(table_name=table_name)
     cursor = conn.cursor()
     cursor.execute(check_query, (lazy_file_hash,))
-    result = cursor.fetchall()
+    result = cursor.fetchone()
     cursor.close()
     return result
 
@@ -119,8 +123,51 @@ def insert_item(conn, table_name, name, is_file, parent_id, child_id, metadata, 
     cursor.close()
     return last_row_id
 
+def full_row_update_at_id(conn, table_name, insert_id, name=None, is_file=None, parent_id=None, child_id=None, metadata=None, lazy_file_check_hash=None, unique_id=None, hash_value=None):
+    if child_id:
+        child_id = ', '.join(map(str, child_id))
+    update_query = '''
+        UPDATE {table_name}
+        SET {set_clause}
+        WHERE id = ?;
+    '''
+    set_clause_parts = []
+    values = []
 
-def update_child_at_id(conn, table_name, insert_id, child_id):
+    if name is not None:
+        set_clause_parts.append('name = ?')
+        values.append(name)
+    if is_file is not None:
+        set_clause_parts.append('is_file = ?')
+        values.append(is_file)
+    if parent_id is not None:
+        set_clause_parts.append('parent_id = ?')
+        values.append(parent_id)
+    if child_id is not None:
+        set_clause_parts.append('child_id = ?')
+        values.append(child_id)
+    if metadata is not None:
+        set_clause_parts.append('metadata = ?')
+        values.append(json.dumps(metadata))
+    if lazy_file_check_hash is not None:
+        set_clause_parts.append('lazy_file_check_hash = ?')
+        values.append(lazy_file_check_hash)
+    if unique_id is not None:
+        set_clause_parts.append('unique_id = ?')
+        values.append(unique_id)
+    if hash_value is not None:
+        set_clause_parts.append('hash = ?')
+        values.append(hash_value)
+
+    set_clause = ', '.join(set_clause_parts)
+    update_query = update_query.format(table_name=table_name, set_clause=set_clause)
+    cursor = conn.cursor()
+    values.append(insert_id)
+    cursor.execute(update_query, tuple(values))
+    conn.commit()
+    cursor.close()
+
+def update_child_at_id(conn, table_name, insert_at_id, child_id):
     child_id=', '.join(map(str, child_id))
     update_query = '''
         UPDATE {table_name}
@@ -129,7 +176,7 @@ def update_child_at_id(conn, table_name, insert_id, child_id):
     '''
     cursor = conn.cursor()
     update_query = update_query.format(table_name=table_name)
-    cursor.execute(update_query, (child_id, insert_id))
+    cursor.execute(update_query, (child_id, insert_at_id))
     conn.commit()
     cursor.close()
 
@@ -149,6 +196,7 @@ def process_folder(conn, table_name, path, parent_id=None):
     if os.path.isfile(path):
         return []
     child_ids = []
+    SIZE=0
     for item in os.listdir(path):
         item_path = os.path.join(path, item)
         is_file = os.path.isfile(item_path)
@@ -158,30 +206,38 @@ def process_folder(conn, table_name, path, parent_id=None):
             lazy_file_hash = lazy_file_check_hash(item_path, metadata['Last Modified'])
             # check if in db
             result = check_file_in_db(conn, lazy_file_hash, table_name)
-            if len(result) > 0:
-                item_id = result[0][0]
+            hash_value = hash_generator(item_path)
+            SIZE+=metadata['Size']
+            if result:
+                item_id = result[0]
                 update_parent_at_id(conn, table_name, item_id, parent_id)
+                # # Full row update for more robustness instead on only parent_id_update
+                # full_row_update_at_id(conn, table_name, item_id, None, is_file, parent_id, None, metadata, None, UNIQUE_ID, hash_value)
                 child_ids.append(item_id)
                 continue
 
-            hash_value = hash_generator(item_path)
             item_id = insert_item(conn, table_name, item, 1, parent_id, None, metadata, lazy_file_hash, UNIQUE_ID, hash_value)
             child_ids.append(item_id)
         else:
             lazy_file_hash = lazy_file_check_hash(item_path, metadata['Last Modified'])
             # check if in db
             result = check_file_in_db(conn, lazy_file_hash, table_name)
-            if len(result) > 0:
-                item_id = result[0][0]
+            if result:
+                item_id = result[0]
                 update_parent_at_id(conn, table_name, item_id, parent_id)
+                # # Full row update for more robustness instead of only parent_id_update
+                # full_row_update_at_id(conn, table_name, item_id, None, is_file, parent_id, None, metadata, None, UNIQUE_ID, None)
+
                 child_ids.append(item_id)
             else:
-                item_id = insert_item(conn, table_name, item, 0, parent_id, None, metadata, lazy_file_hash, UNIQUE_ID, "")
+                item_id = insert_item(conn, table_name, item, 0, parent_id, None, None, lazy_file_hash, UNIQUE_ID, "")
                 child_ids.append(item_id)
-            child_id_vals = process_folder(conn, table_name, item_path, item_id)
+            child_id_vals,child_size = process_folder(conn, table_name, item_path, item_id)
+            SIZE+=child_size
             if len(child_id_vals) > 0:
-                update_child_at_id(conn, table_name, item_id, child_id_vals)
-    return child_ids
+                metadata['Size'] += child_size
+                full_row_update_at_id(conn, table_name, item_id, None, None, None, child_id_vals, metadata, None, None, None)
+    return child_ids,SIZE
 
 def remove_deleted_files(conn, table_name, path):
     IDS_TO_NOT_DELETE = []
@@ -231,7 +287,7 @@ def remove_deleted_files(conn, table_name, path):
     conn.commit()
 
 
-def main():
+def main(FORCE_UPDATE=False):
     with open(CONFIG_FOLDER_LOCATION) as f:
         data = json.load(f)
     
@@ -240,7 +296,8 @@ def main():
         update_date = datetime.datetime.strptime(value["update_date"], "%Y-%m-%d %H:%M:%S.%f")
         current_time = datetime.datetime.now()
         elapsed_time = current_time - update_date
-        if elapsed_time.total_seconds() >= 24 * 60 * 60 or False: 
+        if elapsed_time.total_seconds() <= 24 * 60 * 60 and not FORCE_UPDATE:
+            log(f"Skipping {key} as it was updated less than 24 hours ago",1)
             continue
         path = value["path"]
         name = key
@@ -251,21 +308,31 @@ def main():
         # root folder
         metadata=get_metadata(path)
         lazy_file_hash = lazy_file_check_hash(path, metadata['Last Modified'])
-        # check if in db
-        result = check_file_in_db(conn, lazy_file_hash, name)
+
+        # check if root in db
+        query = f"SELECT id FROM {name} WHERE parent_id IS NULL;"
+        cursor=conn.cursor()
+        cursor.execute(query)
+        result = cursor.fetchall()
+        cursor.close()
+        
         if len(result) > 0:
             item_id = result[0][0]
+            full_row_update_at_id(conn, name, item_id,"root", 0, None, None, None, lazy_file_hash, UNIQUE_ID, "")
         else:
-            item_id=insert_item(conn, name, "root", 0, None, None, metadata, lazy_file_hash, UNIQUE_ID, "")
-        child_id_vals=process_folder(conn, name, path, item_id)
-        update_child_at_id(conn, name, item_id, child_id_vals)
+            item_id=insert_item(conn, name, "root", 0, None, None, None, lazy_file_hash, UNIQUE_ID, "")
+        child_id_vals,child_size=process_folder(conn, name, path, item_id)
+        metadata['Size'] += child_size
+        full_row_update_at_id(conn, name, item_id, None, None, None, child_id_vals, metadata, None, None, None)
 
         # remove deleted files
         remove_deleted_files(conn, name, path)
+
+        log(f"Updated {name} successfully")
         
     conn.close()
     with open(CONFIG_FOLDER_LOCATION, 'w') as f:
         json.dump(data, f, indent=4)
 
 if __name__ == '__main__':
-    main()
+    main(FORCE_UPDATE=True)

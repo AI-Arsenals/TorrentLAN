@@ -1,3 +1,6 @@
 .vscode/*
 Pipfile
 torrentlan/*
+data/.logs/*
+configs/log_config.json
+*.pyc
