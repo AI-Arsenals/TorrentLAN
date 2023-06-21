@@ -1,6 +1,10 @@
 import uuid
 import os 
 import json
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
+from utils.log.main import log
 
 CONFIG="configs/identity.json"
 
@@ -18,6 +22,7 @@ def generate_client_id():
             data['client_id'] = client_id
             with open(CONFIG, 'w') as f:
                 json.dump(data, f)
+            log(f"Generated client id={client_id}")
             return
 
 def set_user_name(user_name=None):
@@ -33,6 +38,7 @@ def set_user_name(user_name=None):
     data['user_name'] = user_name
     with open(CONFIG, 'w') as f:
         json.dump(data, f)
+    log(f"Set user name={user_name}")
     return
     
 if __name__=='__main__':
