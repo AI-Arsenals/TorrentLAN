@@ -16,9 +16,6 @@ get_my_connect_ip=getattr(module, "get_my_connect_ip")
 get_ip_address=getattr(module, "get_ip_address")
 
 
-CONFIG_IDENTITY = "configs/identity.json"
-CONFIG_CLIENT = "configs/client_ip_reg(c-s).json"
-OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 SUB_DB_PATH = "data/.db/sub_db_downloaded"

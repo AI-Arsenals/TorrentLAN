@@ -10,8 +10,6 @@ from utils.log.main import log
 SOFTWARE_DIR = os.getcwd()
 DATABASE_DIR = "data/.db"
 CONFIG_FOLDER_LOCATION = "configs/folder_locations.json"
-CONFIG_IDENTITY = "configs/identity.json"
-UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 
 
 def hash_list_searcher(hashes):
