@@ -103,13 +103,23 @@ def create_table(conn, table_name):
             unique_id TEXT,
             hash TEXT,
             FOREIGN KEY (parent_id) REFERENCES {table_name} (id),
-            FOREIGN KEY (child_id) REFERENCES {table_name} (id),
-            CONSTRAINT idx_hash UNIQUE (hash),
-            CONSTRAINT idx_lazy_file_check_hash UNIQUE (lazy_file_check_hash)
+            FOREIGN KEY (child_id) REFERENCES {table_name} (id)
         );
     '''
     create_table_query = create_table_query.format(table_name=table_name)
     conn.execute(create_table_query)
+
+    create_index_query = '''
+        CREATE INDEX IF NOT EXISTS idx_hash ON {table_name} (hash);
+    '''
+    create_index_query = create_index_query.format(table_name=table_name)
+    conn.execute(create_index_query)
+
+    create_index_query = '''
+        CREATE INDEX IF NOT EXISTS idx_lazy_file_hash ON {table_name} (lazy_file_check_hash);
+    '''
+    create_index_query = create_index_query.format(table_name=table_name)
+    conn.execute(create_index_query)
 
 
 def insert_item(conn, table_name, name, is_file, parent_id, child_id, metadata, lazy_file_check_hash, unique_id, hash_value):
