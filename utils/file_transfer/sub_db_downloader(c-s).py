@@ -31,7 +31,7 @@ def subdb_downloader(unique_id,lazy_file_hash):
     if not os.path.exists(SUB_DB_PATH):
         os.makedirs(SUB_DB_PATH)
     ip = get_ip_address(SERVER_ADDR)
-    log(f"Connecting to {ip}")
+    log(f"Connecting to {ip} for subdb_download")
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

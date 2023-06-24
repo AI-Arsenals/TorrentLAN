@@ -22,7 +22,7 @@ PORT = 8888
 
 def fetch_unique_id_from_hashes(hashes):
     ip = get_ip_address(SERVER_ADDR)
-    log(f"Connecting to {ip}")
+    log(f"Connecting to {ip} for fetching ids from hashes")
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

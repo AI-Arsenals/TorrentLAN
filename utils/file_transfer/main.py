@@ -91,7 +91,7 @@ class HASH_TO_IP_CLASS:
         return same_mask_ids
 
     @staticmethod    
-    def live_and_correct_ips(local_netmask, unique_ids, UNIQUE_ID_TO_IPS):
+    def live_and_correct_ips(local_netmask, unique_ids, UNIQUE_ID_TO_IPS,CACHE_ID_TO_IP):
         """
         Check live IPs and correct id_to_ip mapping using multiple threads with a maximum of 100 concurrent threads.
         """
@@ -99,16 +99,6 @@ class HASH_TO_IP_CLASS:
         same_subnet_ips = HASH_TO_IP_CLASS.netmask_handle(local_netmask, unique_ids, UNIQUE_ID_TO_IPS)
 
         UNIQUE_IP=set()
-        UNIQUE_IP_lock=threading.Lock()
-
-        def access_unique_ip(ip):
-            UNIQUE_IP_lock.acquire()
-            if ip in UNIQUE_IP:
-                UNIQUE_IP_lock.release()
-                return False
-            UNIQUE_IP.add(ip)
-            UNIQUE_IP_lock.release()
-            return True
         
         def check_ip_thread(id, ip):
             result_live_ip_check=live_ip_checker(id, ip)
@@ -118,8 +108,14 @@ class HASH_TO_IP_CLASS:
         unique_id_ip=[]
         for id in same_subnet_ips:
             ip = same_subnet_ips[id]
-            if access_unique_ip(ip):
-                unique_id_ip.append((id,ip))
+            if ip in UNIQUE_IP:
+                continue
+            if ip in CACHE_ID_TO_IP:
+                filtered_ips_n_speed.append((ip,CACHE_ID_TO_IP[ip]))
+                UNIQUE_IP.add(ip)
+                continue
+            unique_id_ip.append((id,ip))
+            UNIQUE_IP.add(ip)
 
         sem = threading.Semaphore(25)
         threads = []
@@ -131,6 +127,9 @@ class HASH_TO_IP_CLASS:
 
         for thread in threads:
             thread.join()
+
+        for ip,speed in filtered_ips_n_speed:
+            CACHE_ID_TO_IP[ip]=speed
 
         # sort ip based on transfer speed
         filtered_ips_n_speed.sort(key=lambda x: x[1], reverse=True)
@@ -177,14 +176,15 @@ class HASH_TO_IP_CLASS:
             return {}
         else:
             UNIQUE_ID_TO_IPS=UNIQUE_ID_TO_IPS[1]
-
+        
+        CACHE_ID_TO_IP={}
         ALL_FILES_DOWNLOADABLE=True
         filtered_hash_to_ip_n_speed={}
         for hash in hashes:
             if hash==None:
                 continue
             unique_ids=HASH_TO_ID[hash]
-            filtered_ips_n_speed=HASH_TO_IP_CLASS.live_and_correct_ips(local_netmask,unique_ids,UNIQUE_ID_TO_IPS)
+            filtered_ips_n_speed=HASH_TO_IP_CLASS.live_and_correct_ips(local_netmask,unique_ids,UNIQUE_ID_TO_IPS,CACHE_ID_TO_IP)
             filtered_hash_to_ip_n_speed[hash]=filtered_ips_n_speed
             if(not filtered_ips_n_speed):
                 ALL_FILES_DOWNLOADABLE=False
@@ -608,6 +608,9 @@ class DOWNLOAD_FILE_CLASS:
                 nonlocal map_high_speed_ip_usage
                 map_high_speed_ip_usage_lock.acquire()
                 if check_free_ips:
+                    if not map_high_speed_ip_usage:
+                        map_high_speed_ip_usage_lock.release()
+                        return False
                     free_ip=[]
                     for check_free_ip in check_free_ips:
                         if check_free_ip not in map_high_speed_ip_usage:
@@ -823,7 +826,7 @@ class DOWNLOAD_FILE_CLASS:
                     res = False
                     while not res:
                         res,ip=LOCKS.access_low_speed_priority_queue(HASH_TO_IP[file_hash])
-                        if ip:
+                        if ip and not res:
                             LOCKS.access_MAX_CONCURRENT_LOW_SPEED_DOWNLOAD(release=True)
                             RETRY_DOWNLOADS.put((seg_file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
                             return
