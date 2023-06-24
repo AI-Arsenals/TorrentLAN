@@ -1025,8 +1025,10 @@ class DOWNLOAD_FILE_CLASS:
         dir_paths=[]
 
         root_id=row_data[0]
+        Total_files=0
         
         def tree_iterator(id):
+            nonlocal Total_files
             subdb_cursor.execute(
                 f"SELECT * FROM {subdb_table_name} WHERE id = ?;", (id,))
 
@@ -1038,6 +1040,7 @@ class DOWNLOAD_FILE_CLASS:
                 file_sizes.append(meta_data["Size"])
                 dir_paths.append(os.path.dirname(meta_data["Path"]))
                 file_hashes.append(row_data[8])
+                Total_files+=1
             else:
                 file_paths.append(meta_data["Path"])
                 dir_paths.append(meta_data["Path"])
@@ -1070,7 +1073,7 @@ class DOWNLOAD_FILE_CLASS:
         for dir in dir_paths:
             DOWNLOAD_FILE_CLASS.dir_create(dir)
 
-        if len(file_paths)-len(dir_paths)==0:
+        if not Total_files:
             log(f"No files to download all were folders")
             log(f"Successfully created folder structure")
             os.remove(subdb_dir)
