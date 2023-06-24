@@ -26,6 +26,7 @@ def fetch_unique_id_from_hashes(hashes):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(30)
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}
@@ -50,6 +51,10 @@ def fetch_unique_id_from_hashes(hashes):
                 return False
             data = json.loads(data)
             return data
+    except socket.timeout:
+        log("Connection timed out",2)
+        log("Server is down",2)
+        return False
     except ConnectionRefusedError:
         log("Server is down",2)
         return False

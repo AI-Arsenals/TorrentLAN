@@ -45,6 +45,8 @@ def file_download(ip, hash,table_name,start_byte=None,end_byte=None):
                 return return_data["file_data"]
             else:
                 return False
+    except socket.timeout:
+        return False
     except ConnectionRefusedError:
         log(f"The IP {ip} is down", 2)
         return False

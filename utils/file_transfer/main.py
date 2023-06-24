@@ -158,6 +158,9 @@ class HASH_TO_IP_CLASS:
 
         # Call Server with hashes and get unique_ids
         HASH_TO_ID= fetch_unique_id_from_hashes(hashes)
+        if not HASH_TO_ID:
+            return None
+        
         IDS=HASH_TO_IP_CLASS.HASHES_TO_IDS(HASH_TO_ID)
 
         # Call Server with unique_ids and get ips
@@ -245,7 +248,7 @@ class DOWNLOAD_FILE_CLASS:
         DOWNLOADED_SIZE = 0
         DOWNLOADED_FILE_PATHS=set()
         DOWNLOADED_SIZE_lock = threading.Lock()
-        log(f"TOTAL_SIZE to download: {TOTAL_SIZE/(1024*1024)} MB")
+        log(f"TOTAL_SIZE to download: {TOTAL_SIZE/(1024*1024):.3g} MB")
 
         if not file_info:
             log("No hashes found",2)
@@ -257,6 +260,8 @@ class DOWNLOAD_FILE_CLASS:
         HIGH_SPEED_IPS=set()
         LOW_SPEED_IPS=set()
         HASH_TO_IP_N_SPEED=HASH_TO_IP_CLASS.hash_to_ip([file_hash for _, _, file_hash, _ in file_info])
+        if not HASH_TO_IP_N_SPEED:
+            return False
         HASH_TO_IP = {}
         FILE_TRIED_TIMES={}
         FILE_TRIED_TIMES_lock=threading.Lock()
@@ -294,7 +299,7 @@ class DOWNLOAD_FILE_CLASS:
         RETRY_DOWNLOADS=queue.Queue()
 
         TOTAL_SPEED=sum([speed for ip,speed in ALL_IPS_N_SPEED])+1e-9
-        log(f"TOTAL_SPEED: {int(TOTAL_SPEED/(10**6))} MBps  from {len(ALL_IPS_N_SPEED)} ips")
+        log(f"TOTAL_SPEED: {TOTAL_SPEED/(10**6):.5g} MBps  from {len(ALL_IPS_N_SPEED)} ips")
 
         ESTIMATED_TIME=TOTAL_SIZE/TOTAL_SPEED
         INITIAL_MAX_CONCURRENT_LOW_SPEED_DOWNLOAD=MAX_CONCURRENT_LOW_SPEED_DOWNLOAD
@@ -1061,7 +1066,7 @@ class DOWNLOAD_FILE_CLASS:
 
         tree_iterator(root_id)
         subdb_conn.close()
-        log(f"Downloading {len(file_paths)-len(dir_paths)} files using subdb {subdb_filename}",0)
+        log(f"Downloading {Total_files} files using subdb {subdb_filename}",0)
 
         # Check if file_paths are within good_paths
         if(not DOWNLOAD_FILE_CLASS.file_path_filter(file_paths)):
@@ -1114,5 +1119,5 @@ class DOWNLOAD_FILE_CLASS:
         
 if __name__ == '__main__':
     # DOWNLOAD_FILE_CLASS.main("5e7350ca-5dd7-40df-9ea5-b2ece85bc4da","50386c5157c9fc0cffab1d53a0e5e5e4",table_name="Normal_Content_Main_Folder")
-     DOWNLOAD_FILE_CLASS.main("5e7350ca-5dd7-40df-9ea5-b2ece85bc4da","1ac2cfd99d503e38d55d35a3a20e65e0",table_name="Normal_Content_Main_Folder")
+     DOWNLOAD_FILE_CLASS.main("a7561257-324c-4186-91ec-45b5e766753f","e4a3871c86f6042767abebff3c1623f3",table_name="Normal_Content_Main_Folder")
   

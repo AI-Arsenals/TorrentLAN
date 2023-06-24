@@ -35,6 +35,7 @@ def subdb_downloader(unique_id,lazy_file_hash):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(60)
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}
@@ -70,6 +71,10 @@ def subdb_downloader(unique_id,lazy_file_hash):
                 log(f"It can be due to node not having the file or server is not updated by node yet",1)
                 s.close()
                 return False
+    except socket.timeout:
+        log("Connection timed out",2)
+        log("Server is down",2)
+        return False
     except ConnectionRefusedError:
         log("Server is down",2)
         return False

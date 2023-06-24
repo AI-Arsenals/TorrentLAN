@@ -23,6 +23,7 @@ def get_ips_and_netmasks(unique_ids):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(60)
             log(f"Connecting to {ip}")
             s.connect((ip, PORT))
             log("Connected to server")
@@ -46,6 +47,10 @@ def get_ips_and_netmasks(unique_ids):
             json_returned_data = json.loads(data.decode())
             s.close()
         return True,json_returned_data
+    except socket.timeout:
+        log("Connection timed out", 2)
+        log("Server is down", 2)
+        return False,None
     except ConnectionRefusedError:
         log("Server is down", 2)
         return False,None
