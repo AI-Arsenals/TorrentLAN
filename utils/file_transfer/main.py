@@ -98,21 +98,28 @@ class HASH_TO_IP_CLASS:
         filtered_ips_n_speed = []
         same_subnet_ips = HASH_TO_IP_CLASS.netmask_handle(local_netmask, unique_ids, UNIQUE_ID_TO_IPS)
 
-        CACHE_check_ip_thread={}
+        UNIQUE_IP=set()
+        UNIQUE_IP_lock=threading.Lock()
+
+        def access_unique_ip(ip):
+            UNIQUE_IP_lock.acquire()
+            if ip in UNIQUE_IP:
+                UNIQUE_IP_lock.release()
+                return False
+            UNIQUE_IP.add(ip)
+            UNIQUE_IP_lock.release()
+            return True
+        
         def check_ip_thread(id, ip):
-            if ip in CACHE_check_ip_thread:
-                result_live_ip_check=CACHE_check_ip_thread[ip]
-            else:
-                result_live_ip_check=live_ip_checker(id, ip)
-                CACHE_check_ip_thread[ip]=result_live_ip_check
+            result_live_ip_check=live_ip_checker(id, ip)
             if result_live_ip_check:
                 filtered_ips_n_speed.append((ip,result_live_ip_check[1]))
-            sem.release()  # Release the semaphore
 
-        unique_id_ip=set()
+        unique_id_ip=[]
         for id in same_subnet_ips:
             ip = same_subnet_ips[id]
-            unique_id_ip.add((id,ip))
+            if access_unique_ip(ip):
+                unique_id_ip.append((id,ip))
 
         sem = threading.Semaphore(25)
         threads = []
@@ -1118,6 +1125,6 @@ class DOWNLOAD_FILE_CLASS:
 
         
 if __name__ == '__main__':
-    # DOWNLOAD_FILE_CLASS.main("5e7350ca-5dd7-40df-9ea5-b2ece85bc4da","50386c5157c9fc0cffab1d53a0e5e5e4",table_name="Normal_Content_Main_Folder")
+    # DOWNLOAD_FILE_CLASS.main("dae9a489-a077-4bba-82de-3f0e6cde0288","79abf0609459c5bf1e6dcb5d124d16e5",table_name="Normal_Content_Main_Folder")
      DOWNLOAD_FILE_CLASS.main("a7561257-324c-4186-91ec-45b5e766753f","e4a3871c86f6042767abebff3c1623f3",table_name="Normal_Content_Main_Folder")
   
