@@ -17,7 +17,7 @@ OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 
-PORT = 8888
+PORT = json.load(open(SERVER_CONFIG))["server_addr"]
 
 def update_server(unique_id, ip,local_conn_ip,netmask):
     try:

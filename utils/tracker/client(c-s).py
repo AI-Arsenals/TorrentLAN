@@ -14,7 +14,7 @@ DBS_LOCATION = "./data/.db/file_tree.db"
 SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 
-PORT = 8888
+PORT = json.load(open(SERVER_CONFIG))["server_port"]
 
 def update_server(unique_id, ip):
     try:
