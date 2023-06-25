@@ -13,7 +13,9 @@ from utils.db_manage.subdb_maker_with_node import subdb_maker
 from utils.log.main import log
 
 HOST = get_intranet_ips()
-PORT = 8888
+SERVER_CONFIG="data/server.json"
+SERVER_CONFIG="configs/server.json"
+PORT=json.load(open(SERVER_CONFIG))["server_port"]
 
 DB_LOCATION = "data/.db"
 ID_to_IP = "data/id_to_ip.json"
