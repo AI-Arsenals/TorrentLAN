@@ -7,6 +7,7 @@ import base64
 import sqlite3
 import sys
 import select
+import psutil
 
 
 sys.path.append(os.path.abspath(os.path.join(
@@ -129,6 +130,14 @@ def handle_client(conn, addr):
 
 
 def start_server():
+    # Check if the server is already running and terminate it
+    for proc in psutil.process_iter():
+        try:
+            if ("python" in proc.name())or("python3" in proc.name()) and "utils/file_transfer/node.py" in proc.cmdline():
+                proc.terminate()
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+
     sockets = []
     for host in HOST:
         try:
