@@ -17,7 +17,7 @@ OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 
-PORT = json.load(open(SERVER_CONFIG))["server_addr"]
+PORT = json.load(open(SERVER_CONFIG))["server_port"]
 
 def update_server(unique_id, ip,local_conn_ip,netmask):
     try:
@@ -100,4 +100,4 @@ def get_netmask(ip_address):
     return None
 
 if __name__ == '__main__':
-    update(Force_update=True)
+    update()

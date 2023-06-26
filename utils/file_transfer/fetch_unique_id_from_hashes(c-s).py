@@ -18,7 +18,7 @@ get_ip_address=getattr(module, "get_ip_address")
 SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 
-PORT = json.load(open(SERVER_CONFIG))["server_addr"]
+PORT = json.load(open(SERVER_CONFIG))["server_port"]
 
 def fetch_unique_id_from_hashes(hashes):
     ip = get_ip_address(SERVER_ADDR)

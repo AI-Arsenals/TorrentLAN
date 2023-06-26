@@ -20,7 +20,7 @@ SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 SUB_DB_PATH = "data/.db/sub_db_downloaded"
 
-PORT = json.load(open(SERVER_CONFIG))["server_addr"]
+PORT = json.load(open(SERVER_CONFIG))["server_port"]
 
 def subdb_downloader(unique_id,lazy_file_hash):
     subdb_filename=unique_id + "_" + lazy_file_hash + ".db"

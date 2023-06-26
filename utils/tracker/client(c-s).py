@@ -71,4 +71,4 @@ def check_updation(Force_update=False):
             else:
                 log("Already Upto date")
 if __name__ == '__main__':
-    check_updation(Force_update=True)
+    check_updation()

@@ -90,6 +90,8 @@ class INSTALL:
             shortcut = shell.CreateShortCut(os.path.join(destination_loc, name + ".lnk"))
             shortcut.Targetpath = source_loc
             shortcut.save()
+
+            print(f"Created shortcut for {source_loc} at {destination_loc} with name {name}")
             
         @staticmethod
         def daemon_startup(file_loc):
@@ -106,7 +108,7 @@ class INSTALL:
             with open(batch_file_path, 'w') as f:
                 f.write('@echo off\n')
                 f.write(f'cd /d "{BASE_DIR}"\n')
-                f.write(f'{INSTALL.py} {file_loc}')
+                f.write(f'start /B /MIN"" "pythonw" "{file_loc}"')
 
             # Task Scheduler object
             scheduler = win32com.client.Dispatch("Schedule.Service")
@@ -157,11 +159,11 @@ class INSTALL:
             with open(batch_file_path, 'w') as f:
                 f.write('@echo off\n')
                 f.write(f'cd /d "{BASE_DIR}"\n')
-                f.write(f'{INSTALL.py} {file_loc}')
+                f.write(f'start /B /MIN"" "pythonw" "{file_loc}"')
 
             # Create a scheduled task to run the batch file every 5 minutes
             task_name = "TorrentLAN - (Network Change Daemon) - " + str(file_loc).replace("\\", "_")
-            task_command = f'schtasks /create /tn "\\TorrentLAN\\{task_name}" /tr "{batch_file_path}" /sc minute /mo 10 /F'
+            task_command = f'schtasks /create /tn "\\TorrentLAN\\{task_name}" /tr "cmd.exe /c \\"{batch_file_path}\\"" /sc minute /mo 10 /F'
             subprocess.run(task_command, shell=True)
             
             print(f"Created network change daemon for {file_loc}")
@@ -394,8 +396,8 @@ def check_admin():
         return False
     
 if __name__ == "__main__":
-    # # check privileges
-    # if not check_admin():
-    #     print("Please run this script as an administrator/root !")
-    #     exit()
+    # check privileges
+    if not check_admin():
+        print("Please run this script as an administrator/root !")
+        exit()
     INSTALL.main()
