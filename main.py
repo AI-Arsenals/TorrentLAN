@@ -14,6 +14,12 @@ module = import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 update_server_with_ip = getattr(module, "update")
 
+module_path = "utils/tracker/shared_util/fetch_childs(c-s).py"
+spec = import_util.spec_from_file_location(None, module_path)
+module = import_util.module_from_spec(spec)
+spec.loader.exec_module(module)
+fetch_childs = getattr(module, "fetch_childs")
+
 
 def set_username(user_name: str) -> bool:
     """
@@ -83,10 +89,11 @@ def childs(unique_id: str, lazy_file_hash: str) -> tuple(list, list):
     Returns:
         list: list of childs which are files
         list: list of childs which are folders
+
+        If some error occured during transmission or (lazy_file_hash and unique_id) cannot be found then it returns False, False
     """
 
-    files = []
-    folders = []
+    files, folders = fetch_childs(unique_id, lazy_file_hash)
     return files, folders
 
 
