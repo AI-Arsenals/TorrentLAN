@@ -6,4 +6,5 @@ configs/log_config.json
 configs/file_transfer_node_config.json
 *.pyc
 dist/*
+!dist/*.whl
 build/*
