@@ -15,20 +15,18 @@ get_my_connect_ip=getattr(module, "get_my_connect_ip")
 get_ip_address=getattr(module, "get_ip_address")
 
 
-CONFIG_IDENTITY = "configs/identity.json"
-CONFIG_CLIENT = "configs/client_ip_reg(c-s).json"
-OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 
-PORT = 8888
+PORT = json.load(open(SERVER_CONFIG))["server_addr"]
 
 def fetch_unique_id_from_hashes(hashes):
     ip = get_ip_address(SERVER_ADDR)
-    log(f"Connecting to {ip}")
+    log(f"Connecting to {ip} for fetching ids from hashes")
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(30)
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}
@@ -53,6 +51,10 @@ def fetch_unique_id_from_hashes(hashes):
                 return False
             data = json.loads(data)
             return data
+    except socket.timeout:
+        log("Connection timed out",2)
+        log("Server is down",2)
+        return False
     except ConnectionRefusedError:
         log("Server is down",2)
         return False

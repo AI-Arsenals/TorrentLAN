@@ -12,7 +12,7 @@ def file_download(ip, hash,table_name,start_byte=None,end_byte=None):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            log(f"Connecting to {ip}:{PORT}")
+            log(f"Connecting to {ip}:{PORT} for file_download")
             s.settimeout(120)
             s.connect((ip, PORT))
             log(f"Connected")
@@ -45,10 +45,15 @@ def file_download(ip, hash,table_name,start_byte=None,end_byte=None):
                 return return_data["file_data"]
             else:
                 return False
+    except socket.timeout:
+        log(f"Timeout while downloading from {ip}", 1)
+        return False
     except ConnectionRefusedError:
         log(f"The IP {ip} is down", 2)
         return False
 
 
 if __name__ == '__main__':
-    log(file_download("127.0.0.1","fae379b2920b02b4c85110eb4d3f42a9997e669c96b15423f9af8cdfd9775098","Normal_Content_Main_Folder"))
+    import base64
+    base=(file_download("10.0.0.4","b89e138ced12a073c41b73a893606c60e6bfb72d4c5ed6deef960388a06efef9","Normal_Content_Main_Folder",0,14))
+    log(base64.b64decode(base).decode())

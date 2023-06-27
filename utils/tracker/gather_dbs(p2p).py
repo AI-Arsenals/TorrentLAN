@@ -7,8 +7,6 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 from utils.log.main import log
 
-CONFIG_IDENTITY = "configs/identity.json"
-OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 DBS_LOCATION = "./data/.other_clients_db"
 
 PORT = 8889

@@ -6,11 +6,10 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..','..')))
 from utils.log.main import log
 
-CONFIG_CLIENT = "configs/client(c-s).json"
 SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 
-PORT = 8888
+PORT = json.load(open(SERVER_CONFIG))["server_addr"]
 
 def get_ip_address(address):
     try:
@@ -24,7 +23,8 @@ def get_ips_and_netmasks(unique_ids):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            log(f"Connecting to {ip}")
+            s.settimeout(60)
+            log(f"Connecting to {ip} for fetching ips and netmasks from unique ids")
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}
@@ -47,6 +47,10 @@ def get_ips_and_netmasks(unique_ids):
             json_returned_data = json.loads(data.decode())
             s.close()
         return True,json_returned_data
+    except socket.timeout:
+        log("Connection timed out", 2)
+        log("Server is down", 2)
+        return False,None
     except ConnectionRefusedError:
         log("Server is down", 2)
         return False,None

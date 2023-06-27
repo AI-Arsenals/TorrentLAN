@@ -42,6 +42,8 @@ def subdb_maker(unique_id, lazy_file_hash, subdb_filename):
     for db in os.listdir(DATABASE_DIR):
         if (not os.path.isfile(os.path.join(DATABASE_DIR, db))):
             continue
+        if db==".gitkeep":
+            continue
         if db == (unique_id + ".db"):
             conn = sqlite3.connect(os.path.join(DATABASE_DIR, db))
             cursor = conn.cursor()

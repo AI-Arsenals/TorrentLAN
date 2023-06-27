@@ -91,28 +91,31 @@ class HASH_TO_IP_CLASS:
         return same_mask_ids
 
     @staticmethod    
-    def live_and_correct_ips(local_netmask, unique_ids, UNIQUE_ID_TO_IPS):
+    def live_and_correct_ips(local_netmask, unique_ids, UNIQUE_ID_TO_IPS,CACHE_ID_TO_IP):
         """
         Check live IPs and correct id_to_ip mapping using multiple threads with a maximum of 100 concurrent threads.
         """
         filtered_ips_n_speed = []
         same_subnet_ips = HASH_TO_IP_CLASS.netmask_handle(local_netmask, unique_ids, UNIQUE_ID_TO_IPS)
 
-        CACHE_check_ip_thread={}
+        UNIQUE_IP=set()
+        
         def check_ip_thread(id, ip):
-            if ip in CACHE_check_ip_thread:
-                result_live_ip_check=CACHE_check_ip_thread[ip]
-            else:
-                result_live_ip_check=live_ip_checker(id, ip)
-                CACHE_check_ip_thread[ip]=result_live_ip_check
+            result_live_ip_check=live_ip_checker(id, ip)
             if result_live_ip_check:
                 filtered_ips_n_speed.append((ip,result_live_ip_check[1]))
-            sem.release()  # Release the semaphore
 
-        unique_id_ip=set()
+        unique_id_ip=[]
         for id in same_subnet_ips:
             ip = same_subnet_ips[id]
-            unique_id_ip.add((id,ip))
+            if ip in UNIQUE_IP:
+                continue
+            if ip in CACHE_ID_TO_IP:
+                filtered_ips_n_speed.append((ip,CACHE_ID_TO_IP[ip]))
+                UNIQUE_IP.add(ip)
+                continue
+            unique_id_ip.append((id,ip))
+            UNIQUE_IP.add(ip)
 
         sem = threading.Semaphore(25)
         threads = []
@@ -124,6 +127,9 @@ class HASH_TO_IP_CLASS:
 
         for thread in threads:
             thread.join()
+
+        for ip,speed in filtered_ips_n_speed:
+            CACHE_ID_TO_IP[ip]=speed
 
         # sort ip based on transfer speed
         filtered_ips_n_speed.sort(key=lambda x: x[1], reverse=True)
@@ -137,15 +143,15 @@ class HASH_TO_IP_CLASS:
             
     @staticmethod
     def HASHES_TO_IDS(hashes):
-        UNIQUE_IDS=[]
+        UNIQUE_IDS=set()
         if not hashes:
             log("No hashes to download either server or clients having files are down",2)
             return
         for hash in hashes:
             unique_ids=hashes[hash]
             for unique_id in unique_ids:
-                UNIQUE_IDS.append(unique_id)
-        return UNIQUE_IDS
+                UNIQUE_IDS.add(unique_id)
+        return list(UNIQUE_IDS)
 
     @staticmethod
     def hash_to_ip(hashes):
@@ -158,6 +164,9 @@ class HASH_TO_IP_CLASS:
 
         # Call Server with hashes and get unique_ids
         HASH_TO_ID= fetch_unique_id_from_hashes(hashes)
+        if not HASH_TO_ID:
+            return None
+        
         IDS=HASH_TO_IP_CLASS.HASHES_TO_IDS(HASH_TO_ID)
 
         # Call Server with unique_ids and get ips
@@ -167,14 +176,15 @@ class HASH_TO_IP_CLASS:
             return {}
         else:
             UNIQUE_ID_TO_IPS=UNIQUE_ID_TO_IPS[1]
-
+        
+        CACHE_ID_TO_IP={}
         ALL_FILES_DOWNLOADABLE=True
         filtered_hash_to_ip_n_speed={}
         for hash in hashes:
             if hash==None:
                 continue
             unique_ids=HASH_TO_ID[hash]
-            filtered_ips_n_speed=HASH_TO_IP_CLASS.live_and_correct_ips(local_netmask,unique_ids,UNIQUE_ID_TO_IPS)
+            filtered_ips_n_speed=HASH_TO_IP_CLASS.live_and_correct_ips(local_netmask,unique_ids,UNIQUE_ID_TO_IPS,CACHE_ID_TO_IP)
             filtered_hash_to_ip_n_speed[hash]=filtered_ips_n_speed
             if(not filtered_ips_n_speed):
                 ALL_FILES_DOWNLOADABLE=False
@@ -212,12 +222,11 @@ class DOWNLOAD_FILE_CLASS:
         return all_path_good
     
     @staticmethod
-    def dir_create(file_path):
+    def dir_create(folder_path):
         """
         Create directory structure
         """
-        if not os.path.exists(file_path):
-            os.makedirs(file_path)
+        os.makedirs(folder_path, exist_ok=True)
     
     @staticmethod
     def handle_download(file_paths, file_sizes, file_hashes,table_names):
@@ -238,11 +247,15 @@ class DOWNLOAD_FILE_CLASS:
 
         file_info = [(file_path, int(file_size), file_hash, table_name) for file_path, file_size, file_hash, table_name in zip(file_paths, file_sizes, file_hashes, table_names) if file_hash]
         file_info = sorted(file_info, key=lambda x: x[1], reverse=True)
+        if not file_info:
+            log("NO File is with anyone who is up ,DOWNLOAD FAILED",2)
+            return False
+        
         TOTAL_SIZE = sum(file_size for _, file_size, _, _ in file_info)
         DOWNLOADED_SIZE = 0
         DOWNLOADED_FILE_PATHS=set()
         DOWNLOADED_SIZE_lock = threading.Lock()
-        log(f"TOTAL_SIZE to download: {TOTAL_SIZE/(1024*1024)} MB")
+        log(f"TOTAL_SIZE to download: {TOTAL_SIZE/(1024*1024):.3g} MB")
 
         if not file_info:
             log("No hashes found",2)
@@ -254,6 +267,8 @@ class DOWNLOAD_FILE_CLASS:
         HIGH_SPEED_IPS=set()
         LOW_SPEED_IPS=set()
         HASH_TO_IP_N_SPEED=HASH_TO_IP_CLASS.hash_to_ip([file_hash for _, _, file_hash, _ in file_info])
+        if not HASH_TO_IP_N_SPEED:
+            return False
         HASH_TO_IP = {}
         FILE_TRIED_TIMES={}
         FILE_TRIED_TIMES_lock=threading.Lock()
@@ -279,10 +294,10 @@ class DOWNLOAD_FILE_CLASS:
             FILE_WAIT_BEFORE_RETRY[file_path]=time.time()
             if int(file_size) > SIZE_AFTER_WHICH_FILE_IS_CONSIDERED_BIG:
                 big_file_info.append((file_path,file_hash,table_name,file_size))
-                FILE_TRIED_TIMES[file_path]=5
+                FILE_TRIED_TIMES[file_path]=10
             else:
                 small_file_info.append((file_path,file_hash,table_name,file_size))
-                FILE_TRIED_TIMES[file_path]=10
+                FILE_TRIED_TIMES[file_path]=15
         if not (len(ALL_IPS_N_SPEED)):
             log("No client alive having any of the files",2)
             return False
@@ -291,7 +306,7 @@ class DOWNLOAD_FILE_CLASS:
         RETRY_DOWNLOADS=queue.Queue()
 
         TOTAL_SPEED=sum([speed for ip,speed in ALL_IPS_N_SPEED])+1e-9
-        log(f"TOTAL_SPEED: {int(TOTAL_SPEED/(10**6))} MBps  from {len(ALL_IPS_N_SPEED)} ips")
+        log(f"TOTAL_SPEED: {TOTAL_SPEED/(10**6):.5g} MBps  from {len(ALL_IPS_N_SPEED)} ips")
 
         ESTIMATED_TIME=TOTAL_SIZE/TOTAL_SPEED
         INITIAL_MAX_CONCURRENT_LOW_SPEED_DOWNLOAD=MAX_CONCURRENT_LOW_SPEED_DOWNLOAD
@@ -416,7 +431,7 @@ class DOWNLOAD_FILE_CLASS:
                 nonlocal FILE_TRIED_TIMES
                 FILE_TRIED_TIMES_lock.acquire()
                 if file_path not in FILE_TRIED_TIMES:
-                    FILE_TRIED_TIMES[file_path]=10
+                    FILE_TRIED_TIMES[file_path]=15
                 if check:
                     if FILE_TRIED_TIMES[file_path]<=0:
                         FILE_TRIED_TIMES_lock.release()
@@ -593,6 +608,9 @@ class DOWNLOAD_FILE_CLASS:
                 nonlocal map_high_speed_ip_usage
                 map_high_speed_ip_usage_lock.acquire()
                 if check_free_ips:
+                    if not map_high_speed_ip_usage:
+                        map_high_speed_ip_usage_lock.release()
+                        return False
                     free_ip=[]
                     for check_free_ip in check_free_ips:
                         if check_free_ip not in map_high_speed_ip_usage:
@@ -808,7 +826,7 @@ class DOWNLOAD_FILE_CLASS:
                     res = False
                     while not res:
                         res,ip=LOCKS.access_low_speed_priority_queue(HASH_TO_IP[file_hash])
-                        if ip:
+                        if ip and not res:
                             LOCKS.access_MAX_CONCURRENT_LOW_SPEED_DOWNLOAD(release=True)
                             RETRY_DOWNLOADS.put((seg_file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
                             return
@@ -938,6 +956,11 @@ class DOWNLOAD_FILE_CLASS:
             thread.start()
             threads.append(thread)
 
+        if not len(LOW_SPEED_IPS):
+            for thread in threads:
+                thread.join()
+            threads=[]
+
         # low speed downloads
         if len(small_file_info):
             for file_path,file_hash,table_name,file_size in small_file_info:
@@ -960,12 +983,17 @@ class DOWNLOAD_FILE_CLASS:
         if len(FAILED_DOWNLOADS):
             log(f"Unable to download all files , following files are not downloaded {FAILED_DOWNLOADS}",2)
             log(f"Please rerun the download again or we can automatically shedule the download for you",2)
+            log(f"Failed download can also mean that the node has deleted the file and not updated the server yet",1)
             return False
         elif not(RETRY_DOWNLOADS.empty()):
-            file_paths=[file_path for file_path,_,_,_,_,_ in RETRY_DOWNLOADS]
-            log(f"Unable to download all files , following files are not downloaded {RETRY_DOWNLOADS}",2)
+            file_paths=[]
+            while not(RETRY_DOWNLOADS.empty()):
+                file_path,file_hash,table_name,file_size,start_byte,end_byte = RETRY_DOWNLOADS.get()
+                file_paths.append(file_path)
+            log(f"Unable to download all files , following files are not downloaded {file_paths}",2)
             log(f"Please rerun the download again or we can automatically shedule the download for you",2) 
             log(f"Total time taken {time.time()-start_time} seconds",0) 
+            log(f"Failed download can also mean that the node has deleted the file and not updated the server yet",1)
             return False
         else:
             bar = ('#' * (25) + '-' * ((25 - 25)))
@@ -1012,8 +1040,10 @@ class DOWNLOAD_FILE_CLASS:
         dir_paths=[]
 
         root_id=row_data[0]
-
+        Total_files=0
+        
         def tree_iterator(id):
+            nonlocal Total_files
             subdb_cursor.execute(
                 f"SELECT * FROM {subdb_table_name} WHERE id = ?;", (id,))
 
@@ -1023,7 +1053,9 @@ class DOWNLOAD_FILE_CLASS:
             if is_file:
                 file_paths.append(meta_data["Path"])
                 file_sizes.append(meta_data["Size"])
+                dir_paths.append(os.path.dirname(meta_data["Path"]))
                 file_hashes.append(row_data[8])
+                Total_files+=1
             else:
                 file_paths.append(meta_data["Path"])
                 dir_paths.append(meta_data["Path"])
@@ -1044,7 +1076,7 @@ class DOWNLOAD_FILE_CLASS:
 
         tree_iterator(root_id)
         subdb_conn.close()
-        log(f"Downloading {len(file_paths)-len(dir_paths)} files using subdb {subdb_filename}",0)
+        log(f"Downloading {Total_files} files using subdb {subdb_filename}",0)
 
         # Check if file_paths are within good_paths
         if(not DOWNLOAD_FILE_CLASS.file_path_filter(file_paths)):
@@ -1056,11 +1088,18 @@ class DOWNLOAD_FILE_CLASS:
         for dir in dir_paths:
             DOWNLOAD_FILE_CLASS.dir_create(dir)
 
-        # Implement auto remove after one day old subdb but currently we are are instant removing it
-        os.remove(subdb_dir)
+        if not Total_files:
+            log(f"No files to download all were folders")
+            log(f"Successfully created folder structure")
+            os.remove(subdb_dir)
+            return True
 
         # Handle file downloading
-        return DOWNLOAD_FILE_CLASS.handle_download(file_paths,file_sizes,file_hashes,table_names)
+        res= DOWNLOAD_FILE_CLASS.handle_download(file_paths,file_sizes,file_hashes,table_names)
+        if (res):
+            os.remove(subdb_dir)
+        
+        return res
     
         
     @staticmethod
@@ -1073,7 +1112,7 @@ class DOWNLOAD_FILE_CLASS:
         result=subdb_downloader(unique_id,lazy_file_hash)
 
         if(not result):
-            log(f"Unable to download subdb for {unique_id}",2)
+            log(f"Unable to download subdb for unique_id {unique_id}, lazy_file_hash {lazy_file_hash}, table_name {table_name}",2)
             return False
         
         subdb_filename=result
@@ -1089,6 +1128,6 @@ class DOWNLOAD_FILE_CLASS:
 
         
 if __name__ == '__main__':
-    # DOWNLOAD_FILE_CLASS.main("5e7350ca-5dd7-40df-9ea5-b2ece85bc4da","50386c5157c9fc0cffab1d53a0e5e5e4",table_name="Normal_Content_Main_Folder")
-     DOWNLOAD_FILE_CLASS.main("5e7350ca-5dd7-40df-9ea5-b2ece85bc4da","1ac2cfd99d503e38d55d35a3a20e65e0",table_name="Normal_Content_Main_Folder")
+    # DOWNLOAD_FILE_CLASS.main("dae9a489-a077-4bba-82de-3f0e6cde0288","79abf0609459c5bf1e6dcb5d124d16e5",table_name="Normal_Content_Main_Folder")
+     DOWNLOAD_FILE_CLASS.main("a7561257-324c-4186-91ec-45b5e766753f","e4a3871c86f6042767abebff3c1623f3",table_name="Normal_Content_Main_Folder")
   
