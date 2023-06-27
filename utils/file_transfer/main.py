@@ -1101,6 +1101,23 @@ class DOWNLOAD_FILE_CLASS:
         
         return res
     
+    @staticmethod
+    def up_check(unique_id):
+        """
+        check single unique_id if it is up
+        """
+        unique_ids=[unique_id]
+        CACHE_ID_TO_IP={}
+        unique_id_to_ips=get_ips_and_netmasks(unique_ids)
+        c_s_server_ip=get_ip_address(C_S_model_SERVER_ADDR)
+        local_ip=get_my_connect_ip(c_s_server_ip)
+        local_netmask=get_netmask(local_ip)
+        ips_n_speeds=HASH_TO_IP_CLASS.live_and_correct_ips(local_netmask,unique_ids,unique_id_to_ips,CACHE_ID_TO_IP)
+        if not len(ips_n_speeds):
+            log(f"ip is not up for unique_id {unique_id}",2)
+            return False
+        return True        
+
         
     @staticmethod
     def main(unique_id,lazy_file_hash,table_name):
