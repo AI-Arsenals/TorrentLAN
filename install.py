@@ -130,12 +130,13 @@ class INSTALL:
             daemons_folder_path = os.path.join(BASE_DIR,'daemons')
             os.makedirs(daemons_folder_path, exist_ok=True)
 
-            # Create a batch file to change directory and run the daemon script
-            batch_file_path = os.path.join(daemons_folder_path, "TorrentLAN - (Run on Startup) - " + str(file_loc).replace("\\", "_").replace("\\", "_")+".bat")
-            with open(batch_file_path, 'w') as f:
-                f.write('@echo off\n')
-                f.write(f'cd /d "{BASE_DIR}"\n')
-                f.write(f'start /B /MIN"" "pythonw" "{file_loc}"')
+            # Create a vbs script to run the daemon script
+            vbs_file_path = os.path.join(daemons_folder_path, "TorrentLAN - (Run on Startup) - " + str(file_loc).replace("\\", "_").replace("\\", "_")+".vbs")
+            with open(vbs_file_path, 'w') as f:
+                f.write('Set objShell = CreateObject("WScript.Shell")\n')
+                f.write(f'objShell.CurrentDirectory = "{BASE_DIR}"\n')
+                f.write(f'objShell.Run "pythonw {file_loc}", 0, False\n')
+                
 
             # Task Scheduler object
             scheduler = win32com.client.Dispatch("Schedule.Service")
@@ -162,10 +163,10 @@ class INSTALL:
             trigger_startup = task_startup.Triggers.Create(9)  # 9 represents "On startup" trigger
             trigger_startup.Id = "TorrentLAN_(Startup Trigger_" + str(file_loc).replace("\\", "_")
 
-            # Run the batch file
+            # Run the vbs file
             action_startup = task_startup.Actions.Create(0)  # 0 represents "Execute" action
-            action_startup.Path = "cmd.exe"
-            action_startup.Arguments = f'/c "{batch_file_path}"'
+            action_startup.Path = "wscript.exe"
+            action_startup.Arguments = f'"{vbs_file_path}"'
 
             # Register the task in the daemon folder
             daemon_folder.RegisterTaskDefinition(str("TorrentLAN - (Daemon - Startup) - " + str(file_loc).replace("\\", "_")),
@@ -182,19 +183,19 @@ class INSTALL:
 
             daemons_folder_path = os.path.join(BASE_DIR,'daemons')
             os.makedirs(daemons_folder_path, exist_ok=True)
-            # Create a batch file to change directory and run the daemon script
-            batch_file_path = os.path.join(daemons_folder_path, "TorrentLAN - (Network Change Daemon) - " + str(file_loc).replace("\\", "_")+".bat")
-            with open(batch_file_path, 'w') as f:
-                f.write('@echo off\n')
-                f.write(f'cd /d "{BASE_DIR}"\n')
-                f.write(f'start /B /MIN"" "pythonw" "{file_loc}"')
+            # Create a vbs script to run the daemon script
+            vbs_file_path = os.path.join(daemons_folder_path, "TorrentLAN - (Time Daemon) - " + str(file_loc).replace("\\", "_")+".vbs")
+            with open(vbs_file_path, 'w') as f:
+                f.write('Set objShell = CreateObject("WScript.Shell")\n')
+                f.write(f'objShell.CurrentDirectory = "{BASE_DIR}"\n')
+                f.write(f'objShell.Run "pythonw {file_loc}", 0, False\n')
 
-            # Create a scheduled task to run the batch file every 5 minutes
-            task_name = "TorrentLAN - (Network Change Daemon) - " + str(file_loc).replace("\\",  "_")
-            task_command = f'schtasks /create /tn "\\TorrentLAN\\{task_name}" /tr "cmd.exe /c \\"{batch_file_path}\\"" /sc minute /mo {recur_time_min} /F'
+            # Create a scheduled task to run the vbs file every 5 minutes
+            task_name = "TorrentLAN - (Time Daemon) - " + str(file_loc).replace("\\",  "_")
+            task_command = f'schtasks /create /tn "\\TorrentLAN\\{task_name}" /tr "wscript.exe \\"{vbs_file_path}\\"" /sc minute /mo {recur_time_min} /F'
             subprocess.run(task_command, shell=True)
             
-            print(f"Created network change daemon for {file_loc}")
+            print(f"Created Time daemon for {file_loc}")
 
     class LINUX:
         @staticmethod
@@ -570,7 +571,7 @@ def check_admin():
     
 if __name__ == "__main__":
     # check privileges
-    # if not check_admin():
-    #     print("Please run this script as an administrator/root !")
-    #     sys.exit(1)
+    if not check_admin():
+        print("Please run this script as an administrator/root !")
+        sys.exit(1)
     INSTALL.main()
