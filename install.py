@@ -13,12 +13,14 @@ class INSTALL:
     else:
         TEMP_DIR=os.getcwd()
 
-
+    
     if platform.system() == "Windows":
         BASE_DIR = os.path.join(os.environ["LOCALAPPDATA"], "TorrentLAN")
     elif platform.system() == "Linux":
         user_dir = os.path.expanduser("~" + os.getlogin())
         BASE_DIR = os.path.join(user_dir, ".local", "TorrentLAN")
+        import getpass
+        user= os.getenv("SUDO_USER")
     elif platform.system() == "Darwin":
         user_dir = os.path.expanduser("~" + os.getlogin())
         BASE_DIR = os.path.join(user_dir, "TorrentLAN")
@@ -54,7 +56,11 @@ class INSTALL:
             BASE_DIR=INSTALL.BASE_DIR
             command=INSTALL.py + " " + file_loc
             # Run the command in a new process with a new console window
-            subprocess.run(command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if platform.system=='Linux':
+                subprocess.run("sudo -u "+INSTALL.user+" "+command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else :
+                subprocess.run(command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
             
         def copy_to_program_files():
             BASE_DIR=INSTALL.BASE_DIR
@@ -79,7 +85,25 @@ class INSTALL:
                         dst_path = os.path.join(BASE_DIR, root.replace(TEMP_DIR, '').lstrip('/'), file)
                         os.makedirs(os.path.dirname(dst_path), exist_ok=True)
                         shutil.copy(src_path, dst_path)
-            os.chown(BASE_DIR, os.getuid(), os.getgid())
+            if platform.system() == "Linux":  
+                # Set the setgid permission
+                subprocess.run(["sudo", "setfacl", "-Rm", f"default:user:{INSTALL.user}:rwx,default:group::rwx,default:other::---", BASE_DIR])
+
+                # Change the group ownership of the directory to the current user's group
+                subprocess.run(["sudo", "chown", f"{INSTALL.user}:{INSTALL.user}", BASE_DIR])
+
+                # Grant read, write, and execute permissions to the current user and the group
+                subprocess.run(["sudo", "chmod", "u+rwx,g+rwx", BASE_DIR])
+                def recursive_chmod(path):
+                    for root, dirs, files in os.walk(path):
+                        for dir in dirs:
+                            dir_path = os.path.join(root, dir)
+                            os.chmod(dir_path, 0o777)
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            os.chmod(file_path, 0o777)
+                recursive_chmod(BASE_DIR)
+                os.chmod(BASE_DIR, 0o777)
             print(f"Copying complete")
 
     class WINDOWS:
@@ -205,7 +229,8 @@ class INSTALL:
             with open(bash_file_path, 'w') as f:
                 f.write('#!/bin/bash\n')
                 f.write(f'cd "{BASE_DIR}"\n')
-                f.write(f'nohup {INSTALL.py} {file_loc} &')
+                f.write(f'sudo -u {INSTALL.user} nohup {INSTALL.py} {file_loc} &')
+            os.chmod(bash_file_path, 0o777)
 
             # Service file content
             service_content = textwrap.dedent(f"""\
@@ -253,7 +278,8 @@ class INSTALL:
             with open(bash_file_path, 'w') as f:
                 f.write('#!/bin/bash\n')
                 f.write(f'cd "{BASE_DIR}"\n')
-                f.write(f'nohup {INSTALL.py} {file_loc} &')
+                f.write(f'sudo -u {INSTALL.user} nohup {INSTALL.py} {file_loc} &')
+            os.chmod(bash_file_path, 0o777)
 
             # Service file content
             service_content = textwrap.dedent(f"""\
@@ -300,9 +326,10 @@ class INSTALL:
                 f.write('#!/bin/bash\n')
                 f.write(f'cd "{BASE_DIR}"\n')
                 f.write('while true; do\n')
-                f.write(f'\t{INSTALL.py} {file_loc} &\n')
+                f.write(f'\tsudo -u {INSTALL.user} {INSTALL.py} {file_loc} &\n')
                 f.write(f'\tsleep {int(recur_time_min)*60}\n')
                 f.write('done\n')
+            os.chmod(bash_file_path, 0o777)
 
             # Service file content
             service_content = textwrap.dedent(f"""\
