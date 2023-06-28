@@ -79,6 +79,7 @@ class INSTALL:
                         dst_path = os.path.join(BASE_DIR, root.replace(TEMP_DIR, '').lstrip('/'), file)
                         os.makedirs(os.path.dirname(dst_path), exist_ok=True)
                         shutil.copy(src_path, dst_path)
+            os.chown(BASE_DIR, os.getuid(), os.getgid())
             print(f"Copying complete")
 
     class WINDOWS:
