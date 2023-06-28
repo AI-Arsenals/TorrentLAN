@@ -13,13 +13,17 @@ class INSTALL:
     else:
         TEMP_DIR=os.getcwd()
 
-
+    
     if platform.system() == "Windows":
         BASE_DIR = os.path.join(os.environ["LOCALAPPDATA"], "TorrentLAN")
     elif platform.system() == "Linux":
-        BASE_DIR = "/usr/bin/TorrentLAN"
+        user_dir = os.path.expanduser("~" + os.getlogin())
+        BASE_DIR = os.path.join(user_dir, ".local", "TorrentLAN")
+        import getpass
+        user= os.getenv("SUDO_USER")
     elif platform.system() == "Darwin":
-        BASE_DIR = "/Applications/TorrentLAN"
+        user_dir = os.path.expanduser("~" + os.getlogin())
+        BASE_DIR = os.path.join(user_dir, "TorrentLAN")
     else:
         print("Unsupported OS")
         sys.exit(1)
@@ -52,8 +56,12 @@ class INSTALL:
             BASE_DIR=INSTALL.BASE_DIR
             command=INSTALL.py + " " + file_loc
             # Run the command in a new process with a new console window
-            subprocess.Popen(command, cwd=INSTALL.BASE_DIR, shell=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
+            if platform.system=='Linux':
+                subprocess.run("sudo -u "+INSTALL.user+" "+command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else :
+                subprocess.run(command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+            
         def copy_to_program_files():
             BASE_DIR=INSTALL.BASE_DIR
             TEMP_DIR=INSTALL.TEMP_DIR
@@ -77,6 +85,25 @@ class INSTALL:
                         dst_path = os.path.join(BASE_DIR, root.replace(TEMP_DIR, '').lstrip('/'), file)
                         os.makedirs(os.path.dirname(dst_path), exist_ok=True)
                         shutil.copy(src_path, dst_path)
+            if platform.system() == "Linux":  
+                # Set the setgid permission
+                subprocess.run(["sudo", "setfacl", "-Rm", f"default:user:{INSTALL.user}:rwx,default:group::rwx,default:other::---", BASE_DIR])
+
+                # Change the group ownership of the directory to the current user's group
+                subprocess.run(["sudo", "chown", f"{INSTALL.user}:{INSTALL.user}", BASE_DIR])
+
+                # Grant read, write, and execute permissions to the current user and the group
+                subprocess.run(["sudo", "chmod", "u+rwx,g+rwx", BASE_DIR])
+                def recursive_chmod(path):
+                    for root, dirs, files in os.walk(path):
+                        for dir in dirs:
+                            dir_path = os.path.join(root, dir)
+                            os.chmod(dir_path, 0o777)
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            os.chmod(file_path, 0o777)
+                recursive_chmod(BASE_DIR)
+                os.chmod(BASE_DIR, 0o777)
             print(f"Copying complete")
 
     class WINDOWS:
@@ -103,12 +130,13 @@ class INSTALL:
             daemons_folder_path = os.path.join(BASE_DIR,'daemons')
             os.makedirs(daemons_folder_path, exist_ok=True)
 
-            # Create a batch file to change directory and run the daemon script
-            batch_file_path = os.path.join(daemons_folder_path, "TorrentLAN - (Run on Startup) - " + str(file_loc).replace("\\", "_")+".bat")
-            with open(batch_file_path, 'w') as f:
-                f.write('@echo off\n')
-                f.write(f'cd /d "{BASE_DIR}"\n')
-                f.write(f'start /B /MIN"" "pythonw" "{file_loc}"')
+            # Create a vbs script to run the daemon script
+            vbs_file_path = os.path.join(daemons_folder_path, "TorrentLAN - (Run on Startup) - " + str(file_loc).replace("\\", "_").replace("\\", "_")+".vbs")
+            with open(vbs_file_path, 'w') as f:
+                f.write('Set objShell = CreateObject("WScript.Shell")\n')
+                f.write(f'objShell.CurrentDirectory = "{BASE_DIR}"\n')
+                f.write(f'objShell.Run "pythonw {file_loc}", 0, False\n')
+                
 
             # Task Scheduler object
             scheduler = win32com.client.Dispatch("Schedule.Service")
@@ -135,10 +163,10 @@ class INSTALL:
             trigger_startup = task_startup.Triggers.Create(9)  # 9 represents "On startup" trigger
             trigger_startup.Id = "TorrentLAN_(Startup Trigger_" + str(file_loc).replace("\\", "_")
 
-            # Run the batch file
+            # Run the vbs file
             action_startup = task_startup.Actions.Create(0)  # 0 represents "Execute" action
-            action_startup.Path = "cmd.exe"
-            action_startup.Arguments = f'/c "{batch_file_path}"'
+            action_startup.Path = "wscript.exe"
+            action_startup.Arguments = f'"{vbs_file_path}"'
 
             # Register the task in the daemon folder
             daemon_folder.RegisterTaskDefinition(str("TorrentLAN - (Daemon - Startup) - " + str(file_loc).replace("\\", "_")),
@@ -147,73 +175,82 @@ class INSTALL:
             print(f"Created startup daemon for {file_loc}")
 
         @staticmethod
-        def daemon_networkchange(file_loc):
+        def daemon_time(file_loc,recur_time_min):
             if not INSTALL.new_install:
                 return
             
             BASE_DIR = INSTALL.BASE_DIR
 
             daemons_folder_path = os.path.join(BASE_DIR,'daemons')
-            # Create a batch file to change directory and run the daemon script
-            batch_file_path = os.path.join(daemons_folder_path, "TorrentLAN - (Network Change Daemon) - " + str(file_loc).replace("\\", "_")+".bat")
-            with open(batch_file_path, 'w') as f:
-                f.write('@echo off\n')
-                f.write(f'cd /d "{BASE_DIR}"\n')
-                f.write(f'start /B /MIN"" "pythonw" "{file_loc}"')
+            os.makedirs(daemons_folder_path, exist_ok=True)
+            # Create a vbs script to run the daemon script
+            vbs_file_path = os.path.join(daemons_folder_path, "TorrentLAN - (Time Daemon) - " + str(file_loc).replace("\\", "_")+".vbs")
+            with open(vbs_file_path, 'w') as f:
+                f.write('Set objShell = CreateObject("WScript.Shell")\n')
+                f.write(f'objShell.CurrentDirectory = "{BASE_DIR}"\n')
+                f.write(f'objShell.Run "pythonw {file_loc}", 0, False\n')
 
-            # Create a scheduled task to run the batch file every 5 minutes
-            task_name = "TorrentLAN - (Network Change Daemon) - " + str(file_loc).replace("\\", "_")
-            task_command = f'schtasks /create /tn "\\TorrentLAN\\{task_name}" /tr "cmd.exe /c \\"{batch_file_path}\\"" /sc minute /mo 10 /F'
+            # Create a scheduled task to run the vbs file every 5 minutes
+            task_name = "TorrentLAN - (Time Daemon) - " + str(file_loc).replace("\\",  "_")
+            task_command = f'schtasks /create /tn "\\TorrentLAN\\{task_name}" /tr "wscript.exe \\"{vbs_file_path}\\"" /sc minute /mo {recur_time_min} /F'
             subprocess.run(task_command, shell=True)
             
-            print(f"Created network change daemon for {file_loc}")
+            print(f"Created Time daemon for {file_loc}")
 
     class LINUX:
         @staticmethod
-        def create_shortcut(source_loc, destination_loc,name):
+        def create_shortcut(source_loc, destination_loc, name):
             if not INSTALL.new_install:
                 return
+            shortcut_path = os.path.join(destination_loc, name)
 
-            # Create the shortcut file
-            shortcut_path = os.path.join(destination_loc, name + ".desktop")
-
-            if os.path.isfile(shortcut_path):
-                Icon="file"
+            if os.path.exists(shortcut_path):
+                print(f"Shortcut already exists at {shortcut_path}")
             else:
-                Icon="folder"
-            with open(shortcut_path, "w") as shortcut_file:
-                shortcut_file.write(
-                    f"[Desktop Entry]\nName={name}\nComment=TorrentLAN\nExec={source_loc}\nIcon={Icon}"
-                )
-            
-            print(f"Created shortcut for {source_loc} at {shortcut_path} with name {name}")
+                subprocess.run(["ln", "-s", source_loc, shortcut_path])
+                print(f"Created shortcut for {source_loc} at {shortcut_path} with name {name}")
 
 
         @staticmethod
         def daemon_startup(file_loc):
             if not INSTALL.new_install:
                 return
-
+            import textwrap
+                
             BASE_DIR = INSTALL.BASE_DIR
 
+            new_str = str(file_loc).replace("(", "_").replace(")", "_").replace("/", "_").replace("/", "_").replace("-", "_")
+            # remove ext
+            new_str=new_str.replace(".","")
+
+            daemons_folder_path = os.path.join(BASE_DIR,'daemons')
+            os.makedirs(daemons_folder_path, exist_ok=True)
+            # Create a shell file to change directory and run the daemon script
+            bash_file_path = os.path.join(daemons_folder_path, "TorrentLAN_Startup_" + new_str+".sh")
+            with open(bash_file_path, 'w') as f:
+                f.write('#!/bin/bash\n')
+                f.write(f'cd "{BASE_DIR}"\n')
+                f.write(f'sudo -u {INSTALL.user} nohup {INSTALL.py} {file_loc} &')
+            os.chmod(bash_file_path, 0o777)
+
             # Service file content
-            service_content = f"""\
+            service_content = textwrap.dedent(f"""\
             [Unit]
-            Description=TorrentLAN - (Startup) - {str(file_loc)} 
+            Description=TorrentLAN - Startup - {new_str} 
             After=network.target
 
             [Service]
-            ExecStart={INSTALL.py} {file_loc}
+            ExecStart=bash {bash_file_path}
             WorkingDirectory={BASE_DIR}
 
             [Install]
             WantedBy=default.target
-            """
+            """)
 
-            daemon_folder_path = os.path.join('/etc/systemd/system', 'torrentlan')
+            daemon_folder_path = os.path.join('/etc/systemd/system')
             os.makedirs(daemon_folder_path, exist_ok=True)
-            
-            service_file_path = os.path.join(daemon_folder_path, 'TorrentLAN - (Startup) - ' + str(file_loc) + '.service')
+
+            service_file_path = os.path.join(daemon_folder_path, 'TorrentLAN_Startup' + new_str + '.service')
             with open(service_file_path, 'w') as service_file:
                 service_file.write(service_content)
 
@@ -226,28 +263,44 @@ class INSTALL:
         def daemon_networkchange(file_loc):
             if not INSTALL.new_install:
                 return
+            import textwrap
 
             BASE_DIR = INSTALL.BASE_DIR
+            new_str = str(file_loc).replace("(", "_").replace(")", "_").replace("/", "_").replace("/", "_").replace("-", "_")   
+            # remove ext
+            new_str=new_str.replace(".","")
+
+             
+
+            daemons_folder_path = os.path.join(BASE_DIR,'daemons')
+            os.makedirs(daemons_folder_path, exist_ok=True)
+            # Create a shell file to change directory and run the daemon script
+            bash_file_path = os.path.join(daemons_folder_path, "TorrentLAN_NetworkChange_" + new_str+".sh")
+            with open(bash_file_path, 'w') as f:
+                f.write('#!/bin/bash\n')
+                f.write(f'cd "{BASE_DIR}"\n')
+                f.write(f'sudo -u {INSTALL.user} nohup {INSTALL.py} {file_loc} &')
+            os.chmod(bash_file_path, 0o777)
 
             # Service file content
-            service_content = f"""\
+            service_content = textwrap.dedent(f"""\
             [Unit]
-            Description=TorrentLAN - (Network Change) - {str(file_loc)}
+            Description=TorrentLAN - Network Change - {new_str}
 
             [Service]
             Type=simple
-            ExecStart={INSTALL.py} {file_loc}
+            ExecStart=bash {bash_file_path}
             WorkingDirectory={BASE_DIR}
 
             [Install]
             WantedBy=network.target
-            """
+            """)
 
-            daemon_folder_path = os.path.join('/etc/systemd/system', 'torrentlan')
+            daemon_folder_path = os.path.join('/etc/systemd/system')
             os.makedirs(daemon_folder_path, exist_ok=True)
 
             # Write the service file
-            service_file_path = os.path.join(daemon_folder_path, 'TorrentLAN - (Network Change) - ' + str(file_loc) + '.service')
+            service_file_path = os.path.join(daemon_folder_path, 'TorrentLAN_NetworkChange_' + new_str + '.service')
             with open(service_file_path, 'w') as service_file:
                 service_file.write(service_content)
 
@@ -255,6 +308,78 @@ class INSTALL:
             os.system(f"systemctl enable {service_file_path}")
 
             print(f"Created network change daemon for {file_loc}")
+        
+        @staticmethod
+        def daemon_time(file_loc, recur_time_min):
+            if not INSTALL.new_install:
+                return
+            import textwrap
+            
+            BASE_DIR = INSTALL.BASE_DIR
+            new_str = str(file_loc).replace("(", "_").replace(")", "_").replace("/", "_").replace("/", "_").replace("-", "_")   
+            # remove ext
+            new_str = new_str.replace(".", "")
+            daemons_folder_path = os.path.join(BASE_DIR, 'daemons')
+            os.makedirs(daemons_folder_path, exist_ok=True)
+            # Create a shell file to change directory and run the daemon script
+            bash_file_path = os.path.join(daemons_folder_path, "TorrentLAN_TimeDaemon_" + new_str + ".sh")
+            with open(bash_file_path, 'w') as f:
+                f.write('#!/bin/bash\n')
+                f.write(f'cd "{BASE_DIR}"\n')
+                f.write('while true; do\n')
+                f.write(f'\tsudo -u {INSTALL.user} {INSTALL.py} {file_loc} &\n')
+                f.write(f'\tsleep {int(recur_time_min)*60}\n')
+                f.write('done\n')
+            os.chmod(bash_file_path, 0o777)
+
+            # Service file content
+            service_content = textwrap.dedent(f"""\
+            [Unit]
+            Description=TorrentLAN - Time Daemon - {new_str}
+
+            [Service]
+            Type=simple
+            ExecStart=bash {bash_file_path}
+            WorkingDirectory={BASE_DIR}
+
+            [Install]
+            WantedBy=timers.target
+            """)
+
+            daemon_folder_path = os.path.join('/etc/systemd/system')
+            os.makedirs(daemon_folder_path, exist_ok=True)
+
+            # Write the service file
+            service_file_path = os.path.join(daemon_folder_path, 'TorrentLAN_TimeDaemon_' + new_str + '.service')
+            with open(service_file_path, 'w') as service_file:
+                service_file.write(service_content)
+
+            os.system("systemctl daemon-reload")
+            os.system(f"systemctl enable {service_file_path}")
+
+            timer_content = textwrap.dedent(f"""\
+            [Unit]
+            Description=TorrentLAN - Time Daemon Timer - {new_str}
+
+            [Timer]
+            OnBootSec=1min
+            OnUnitActiveSec={recur_time_min}min
+            Unit=TorrentLAN_TimeDaemon_{new_str}.service
+
+            [Install]
+            WantedBy=timers.target
+            """)
+
+            # Write the timer file
+            timer_file_path = os.path.join(daemon_folder_path, 'TorrentLAN_TimeDaemon_' + new_str + '.timer')
+            with open(timer_file_path, 'w') as timer_file:
+                timer_file.write(timer_content)
+
+            subprocess.run(["systemctl", "daemon-reload"], check=True)
+            subprocess.run(["systemctl", "enable", os.path.basename(timer_file_path)], check=True)
+            subprocess.run(["systemctl", "start", os.path.basename(timer_file_path)], check=True)
+                               
+            print(f"Created network change daemon for {file_loc} with recur time {recur_time_min} min")
 
     class MAC:
         @staticmethod
@@ -276,6 +401,7 @@ class INSTALL:
                 return
 
             BASE_DIR = INSTALL.BASE_DIR
+            new_str=str(file_loc).replace("/", "_")
 
             # Create the launchd plist content
             plist_content = f"""\
@@ -283,7 +409,7 @@ class INSTALL:
             <plist version="1.0">
             <dict>
                 <key>Label</key>
-                <string>torrentlan.startup.{str(file_loc)}</string>
+                <string>torrentlan.startup.{new_str}</string>
                 <key>ProgramArguments</key>
                 <array>
                     <string>{INSTALL.py}</string>
@@ -298,7 +424,7 @@ class INSTALL:
             """
 
             # Define the launchd plist path
-            plist_file_path = os.path.expanduser(f"~/Library/LaunchAgents/torrentlan.startup.{str(file_loc)}.plist")
+            plist_file_path = os.path.expanduser(f"~/Library/LaunchAgents/torrentlan.startup.{new_str}.plist")
 
             # Write the launchd plist file
             with open(plist_file_path, "w") as plist_file:
@@ -315,6 +441,7 @@ class INSTALL:
                 return
 
             BASE_DIR = INSTALL.BASE_DIR
+            new_str=str(file_loc).replace("/", "_")
 
             # Create the launchd plist content
             plist_content = f"""\
@@ -322,7 +449,7 @@ class INSTALL:
             <plist version="1.0">
             <dict>
                 <key>Label</key>
-                <string>torrentlan.networkchange.{str(file_loc)}</string>
+                <string>torrentlan.networkchange.{new_str}</string>
                 <key>ProgramArguments</key>
                 <array>
                     <string>{INSTALL.py}</string>
@@ -339,7 +466,7 @@ class INSTALL:
             """
 
             # Define the launchd plist path
-            plist_file_path = os.path.expanduser(f"~/Library/LaunchAgents/torrentlan.networkchange.{str(file_loc)}.plist")
+            plist_file_path = os.path.expanduser(f"~/Library/LaunchAgents/torrentlan.networkchange.{new_str}.plist")
 
             # Write the launchd plist file
             with open(plist_file_path, "w") as plist_file:
@@ -350,31 +477,78 @@ class INSTALL:
 
             print(f"Created network change daemon for {file_loc}")
 
+        @staticmethod
+        def daemon_time(file_loc,recur_time_min):
+            if not INSTALL.new_install:
+                return
+
+            BASE_DIR = INSTALL.BASE_DIR
+            new_str=str(file_loc).replace("/", "_")
+
+            # Create the launchd plist content
+            plist_content = f"""\
+            <?xml version="1.0" encoding="UTF-8"?>
+            <plist version="1.0">
+            <dict>
+                <key>Label</key>
+                <string>torrentlan.time.{new_str}</string>
+                <key>ProgramArguments</key>
+                <array>
+                    <string>{INSTALL.py}</string>
+                    <string>{file_loc}</string>
+                </array>
+                <key>StartCalendarInterval</key>
+                <dict>
+                    <key>Minute</key>
+                    <integer>{recur_time_min}</integer>
+                </dict>
+                <key>WorkingDirectory</key>
+                <string>{BASE_DIR}</string>
+            </dict>
+            </plist>
+            """
+
+            # Define the launchd plist path
+            plist_file_path = os.path.expanduser(f"~/Library/LaunchAgents/torrentlan.time.{new_str}.plist")
+
+            # Write the launchd plist file
+            with open(plist_file_path, "w") as plist_file:
+                plist_file.write(plist_content)
+
+            # Load the launchd plist file
+            os.system(f"launchctl load {plist_file_path}")
+
+            print(f"Created time daemon for {file_loc} with recur time {recur_time_min} min")
+
 
     def main():
         INSTALL.ALL_PLATFORMS.copy_to_program_files()
         INSTALL.ALL_PLATFORMS.run_once("utils/identity/main.py")
         INSTALL.ALL_PLATFORMS.run_once("utils/tracker/client_ip_reg(c-s).py")
-        INSTALL.ALL_PLATFORMS.run_once("utils/file_transfer/node.py")
 
         if platform.system() == "Windows":
             INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~/Documents"), "TorrentLAN")
             INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
-            INSTALL.WINDOWS.daemon_networkchange(os.path.join("utils", "file_transfer", "node.py"))
+            INSTALL.WINDOWS.daemon_time(os.path.join("utils", "file_transfer", "node.py"),5)
             INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
-            INSTALL.WINDOWS.daemon_networkchange(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
+            INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"),5)
+            INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
         elif platform.system() == "Linux":
-            INSTALL.LINUX.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~/Documents"), "TorrentLAN")
+            INSTALL.LINUX.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~" + os.getlogin())+"/Documents", "TorrentLAN")
             INSTALL.LINUX.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
-            INSTALL.LINUX.daemon_networkchange(os.path.join("utils", "file_transfer", "node.py"))
+            # INSTALL.LINUX.daemon_networkchange(os.path.join("utils", "file_transfer", "node.py"))
+            INSTALL.LINUX.daemon_time(os.path.join("utils", "file_transfer", "node.py"),5)
             INSTALL.LINUX.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
-            INSTALL.LINUX.daemon_networkchange(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
+            # INSTALL.LINUX.daemon_networkchange(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
+            INSTALL.LINUX.daemon_time(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"),5)
+            INSTALL.LINUX.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
         elif platform.system() == "Darwin":
-            INSTALL.MAC.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~/Documents"), "TorrentLAN")
+            INSTALL.MAC.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~" + os.getlogin())+"/Documents", "TorrentLAN")
             INSTALL.MAC.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
             INSTALL.MAC.daemon_networkchange(os.path.join("utils", "file_transfer", "node.py"))
             INSTALL.MAC.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
             INSTALL.MAC.daemon_networkchange(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
+            INSTALL.MAC.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
         
         if INSTALL.new_install:
             print("Installation complete !!!!!!!!!")
@@ -399,5 +573,5 @@ if __name__ == "__main__":
     # check privileges
     if not check_admin():
         print("Please run this script as an administrator/root !")
-        exit()
+        sys.exit(1)
     INSTALL.main()
