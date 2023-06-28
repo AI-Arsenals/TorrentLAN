@@ -493,8 +493,7 @@ class INSTALL:
 
 
     def main():
-        # INSTALL.ALL_PLATFORMS.copy_to_program_files()
-        print("remove a comment")
+        INSTALL.ALL_PLATFORMS.copy_to_program_files()
         INSTALL.ALL_PLATFORMS.run_once("utils/identity/main.py")
         INSTALL.ALL_PLATFORMS.run_once("utils/tracker/client_ip_reg(c-s).py")
 
