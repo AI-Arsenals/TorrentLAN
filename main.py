@@ -20,6 +20,17 @@ module = import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 fetch_childs = getattr(module, "fetch_childs")
 
+module_path = "utils/tracker/shared_util/fetch_rows_at_depth(c-s).py"
+spec = import_util.spec_from_file_location(None, module_path)
+module = import_util.module_from_spec(spec)
+spec.loader.exec_module(module)
+fetch_rows_at_depth = getattr(module, "fetch_rows_at_depth")
+
+module_path = "utils/extra tools/web_downloader/main.py"
+spec = import_util.spec_from_file_location(None, module_path)
+module = import_util.module_from_spec(spec)
+spec.loader.exec_module(module)
+web_download = getattr(module, "main")
 
 def set_username(user_name: str) -> bool:
     """
@@ -111,12 +122,12 @@ def upload_file(path: str) -> bool:
         bool: True if success else False
     """
 
-    value = create_link
+    # value = create_link
     db_create_main(FORCE_UPDATE=True)
     update_server_with_db()
     update_server_with_ip()
 
-    return value
+    # return value
 
 
 def db_update() -> bool:
@@ -134,3 +145,34 @@ def db_update() -> bool:
     update_server_with_ip()
 
     return True
+
+def rows_at_depth(depth : int, folder_name = None) -> tuple(list,list):
+    """
+    --Finds rows at particular depth
+    - if 'depth'=0 or 'depth'=1 then no need to provide 'folder_name'
+    - depth 0 means it returns table names in dbs, eg-Normal_Content_Folder
+    - depth 1 means Movies,Music,Games
+    - depth > 1 , u need to specify depth accordingly and 'folder_name' show be equal to name of parent of the rows at the depth u want
+
+    Arguments:
+        depth (int) : depth at while the files u want to see
+    
+    Returns :
+        files (list) : list of tuples and each tuple is same as a row in db, the tuples are of only file
+        folders (list) : list of tuples and each tuple is same as a row in db, the tuples are of only folder
+    """
+
+    files,folders=fetch_rows_at_depth(depth,folder_name)
+    return files,folders
+
+def web_downloader(url : str, output_filename=None,output_dir=None):
+    """
+    -- downloads files from web using multiple fragments download, it is useful when server hosting the file limits a single download speed
+    
+    Arguments:
+        url (str) : url of the file to download
+        output_filename (str) : if u want to yourself specify the filename (Default is os.path.basename(url))
+        output_dir(str) : if u want to specify download location (Default is data/Web_downloader)
+    """
+
+    web_download(url,output_filename,output_dir)
