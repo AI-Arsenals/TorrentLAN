@@ -183,9 +183,12 @@ def upload(source_path : str, dest_dir : str):
     --create a symlink
     - frontend should ask user source_path and then some inapp ui based to make them select the path
     - the symlink is created with same name as of the file/folder name of source_path
+    - if the user OS is windows then frontend should notify before hand that he need to click yes in popup to upload file, if the user doesn't want to do that, then open the folder of ./data and tell the user to put the data accordingly (eg - inside ./data/Normal/Games)
+
     Arguments:
         source_path (str) : path of a file or folder that is to be uploaded
         dest_path (str) :  path where the pointer(symlink) [eg- ./data/Normal/Games if we suppose source_path is a game] 
     """
 
     create_symlink(source_path,dest_dir)
+    db_update()
