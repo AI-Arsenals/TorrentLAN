@@ -1,6 +1,7 @@
 from utils.identity.main import set_user_name
 from utils.file_transfer.main import *
 from utils.db_manage.db_create import main as db_create_main
+from utils.db_manage.symlink_maker import create_symlink
 
 module_path = "utils/tracker/client(c-s).py"
 spec = import_util.spec_from_file_location(None, module_path)
@@ -176,3 +177,15 @@ def web_downloader(url : str, output_filename=None,output_dir=None):
     """
 
     web_download(url,output_filename,output_dir)
+
+def upload(source_path : str, dest_dir : str):
+    """
+    --create a symlink
+    - frontend should ask user source_path and then some inapp ui based to make them select the path
+    - the symlink is created with same name as of the file/folder name of source_path
+    Arguments:
+        source_path (str) : path of a file or folder that is to be uploaded
+        dest_path (str) :  path where the pointer(symlink) [eg- ./data/Normal/Games if we suppose source_path is a game] 
+    """
+
+    create_symlink(source_path,dest_dir)
