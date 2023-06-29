@@ -208,9 +208,9 @@ class DOWNLOAD_FILE_CLASS:
         for good_path in good_paths:
             if("Premium" in good_path):
                 continue
-            good_path = os.path.abspath(good_path)
+            good_path = os.path.realpath(good_path)
             for file_path in file_paths:
-                file_path = os.path.abspath(file_path)
+                file_path = os.path.realpath(file_path)
                 # Check if file_path is a subdirectory or file within good_path
                 if os.path.commonpath([good_path, file_path]) != good_path:
                     # reporting via threat report
