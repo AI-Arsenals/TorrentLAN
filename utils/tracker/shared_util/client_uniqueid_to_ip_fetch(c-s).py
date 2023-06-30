@@ -2,21 +2,22 @@ import socket
 import os
 import json
 import sys
+import importlib.util as import_util
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..','..')))
 from utils.log.main import log
+
+module_path = "utils/tracker/client_ip_reg(c-s).py"
+spec =import_util.spec_from_file_location("", module_path)
+module =import_util.module_from_spec(spec)
+spec.loader.exec_module(module)
+get_ip_address=getattr(module, "get_ip_address")
 
 SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 
 PORT = json.load(open(SERVER_CONFIG))["server_port"]
 
-def get_ip_address(address):
-    try:
-        ip_address = socket.gethostbyname(address)
-        return ip_address
-    except socket.gaierror:
-        return None
 
 def get_ips_and_netmasks(unique_ids):
     ip = get_ip_address(SERVER_ADDR)
@@ -55,4 +56,4 @@ def get_ips_and_netmasks(unique_ids):
         log("Server is down", 2)
         return False,None
 if __name__ == '__main__':
-    get_ips_and_netmasks()
+    get_ips_and_netmasks("041279ea-3370-40a8-a094-e9cbb5a389f2")

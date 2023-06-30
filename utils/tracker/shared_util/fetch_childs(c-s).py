@@ -31,6 +31,7 @@ def fetch_childs(unique_id,lazy_file_hash):
             js_data = {}
             js_data["fetch_childs"]=True
             js_data["unique_id"] = unique_id
+            js_data["lazy_file_hash"]=lazy_file_hash
             data_to_send = json.dumps(js_data).encode()
             data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>" #"<"+ sha256 of "<EOF>"+">"
             s.sendall(data_to_send)
@@ -58,4 +59,4 @@ def fetch_childs(unique_id,lazy_file_hash):
         log("Server is down", 2)
         return False,False
 if __name__ == '__main__':
-    log(fetch_childs())
+    log(fetch_childs("041279ea-3370-40a8-a094-e9cbb5a389f2","96a1cf5cb2e472a8eacafb5671ac9d85"))

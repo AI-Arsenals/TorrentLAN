@@ -45,7 +45,9 @@ def get_ip_address(address):
         ip_address = socket.gethostbyname(address)
         return ip_address
     except socket.gaierror:
-        return None
+        log(f"Either server is down, or we are unable to connect to server at {address}",2)
+        log(f"By default connecting to local host instead of server at {address}",1)
+        return "127.0.0.1"
 
 def get_my_connect_ip(conn_address):
     try:
