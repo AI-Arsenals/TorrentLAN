@@ -28,6 +28,12 @@ module = import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 fetch_rows_at_depth = getattr(module, "fetch_rows_at_depth")
 
+module_path = "utils/tracker/shared_util/search_db(c-s).py"
+spec = import_util.spec_from_file_location("", module_path)
+module = import_util.module_from_spec(spec)
+spec.loader.exec_module(module)
+search_db = getattr(module, "search_db")
+
 module_path = "utils/extra tools/web_downloader/main.py"
 spec = import_util.spec_from_file_location("", module_path)
 module = import_util.module_from_spec(spec)
@@ -193,3 +199,24 @@ def upload(source_path : str, dest_dir : str):
 
     create_symlink(source_path,dest_dir)
     db_update()
+
+def db_seacrh(search_bys:list , searchs:list) -> list:
+    """
+    --Searches with AND filter in db
+    - search_bys is list of columns to search in
+    - searchs is list of values to search for
+    - the value in searchs are the mapping to the columns in search_bys
+    - current columns that can be searched=[id,name,is_file,parent_id,child_id,metadata,lazy_file_check_hash,unique_id,hash]
+    - eg = db_search(["name","unique_id"],["main","041279ea-3370-40a8-a094-e9cbb5a389f2"])
+
+    Arguments:
+        search_bys (list) : list of columns to search in
+        searchs (list) : list of values to search for
+    
+    Returns :
+        list : list of tuples and each tuple is same as a row in db
+    """
+
+    results=search_db(search_bys,searchs)
+    return results
+    
