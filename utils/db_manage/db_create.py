@@ -121,6 +121,12 @@ def create_table(conn, table_name):
     create_index_query = create_index_query.format(table_name=table_name)
     conn.execute(create_index_query)
 
+    create_index_query = '''
+        CREATE INDEX IF NOT EXISTS idx_lazy_file_hash ON {table_name} (name);
+    '''
+    create_index_query = create_index_query.format(table_name=table_name)
+    conn.execute(create_index_query)
+
 
 def insert_item(conn, table_name, name, is_file, parent_id, child_id, metadata, lazy_file_check_hash, unique_id, hash_value):
     insert_query = '''
