@@ -1,34 +1,35 @@
+import importlib.util as import_util
 from utils.identity.main import set_user_name
-from utils.file_transfer.main import *
+from utils.file_transfer.main import DOWNLOAD_FILE_CLASS
 from utils.db_manage.db_create import main as db_create_main
 from utils.db_manage.symlink_maker import create_symlink
 
 module_path = "utils/tracker/client(c-s).py"
-spec = import_util.spec_from_file_location(None, module_path)
+spec = import_util.spec_from_file_location("", module_path)
 module = import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 update_server_with_db = getattr(module, "check_updation")
 
 module_path = "utils/tracker/client_ip_reg(c-s).py"
-spec = import_util.spec_from_file_location(None, module_path)
+spec = import_util.spec_from_file_location("", module_path)
 module = import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 update_server_with_ip = getattr(module, "update")
 
 module_path = "utils/tracker/shared_util/fetch_childs(c-s).py"
-spec = import_util.spec_from_file_location(None, module_path)
+spec = import_util.spec_from_file_location("", module_path)
 module = import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 fetch_childs = getattr(module, "fetch_childs")
 
 module_path = "utils/tracker/shared_util/fetch_rows_at_depth(c-s).py"
-spec = import_util.spec_from_file_location(None, module_path)
+spec = import_util.spec_from_file_location("", module_path)
 module = import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 fetch_rows_at_depth = getattr(module, "fetch_rows_at_depth")
 
 module_path = "utils/extra tools/web_downloader/main.py"
-spec = import_util.spec_from_file_location(None, module_path)
+spec = import_util.spec_from_file_location("", module_path)
 module = import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 web_download = getattr(module, "main")
@@ -74,7 +75,7 @@ def download(unique_id: str, lazy_file_hash: str, table_name: str = "Normal_Cont
     return value
 
 
-def uniqueid_is_up(unique_id: str) -> tuple(bool, float):
+def uniqueid_is_up(unique_id: str) -> tuple[bool, float]:
     """
     --check if a unique id is up
 
@@ -90,7 +91,7 @@ def uniqueid_is_up(unique_id: str) -> tuple(bool, float):
     return val1, val2
 
 
-def childs(unique_id: str, lazy_file_hash: str) -> tuple(list, list):
+def childs(unique_id: str, lazy_file_hash: str) -> tuple[list, list]:
     """
     --get childs of a unique id
 
@@ -147,7 +148,7 @@ def db_update() -> bool:
 
     return True
 
-def rows_at_depth(depth : int, folder_name = None) -> tuple(list,list):
+def rows_at_depth(depth : int, folder_name = None) -> tuple[list,list]:
     """
     --Finds rows at particular depth
     - if 'depth'=0 or 'depth'=1 then no need to provide 'folder_name'
@@ -181,7 +182,7 @@ def web_downloader(url : str, output_filename=None,output_dir=None):
 def upload(source_path : str, dest_dir : str):
     """
     --create a symlink
-    - frontend should ask user source_path and then some inapp ui based to make them select the path
+    - frontend should ask user source_path and then some inapp ui based to make them select the dest_dir
     - the symlink is created with same name as of the file/folder name of source_path
     - if the user OS is windows then frontend should notify before hand that he need to click yes in popup to upload file, if the user doesn't want to do that, then open the folder of ./data and tell the user to put the data accordingly (eg - inside ./data/Normal/Games)
 

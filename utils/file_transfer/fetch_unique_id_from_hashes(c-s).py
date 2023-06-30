@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..
 from utils.log.main import log
 
 module_path = "utils/tracker/client_ip_reg(c-s).py"
-spec =import_util.spec_from_file_location(None, module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 get_my_connect_ip=getattr(module, "get_my_connect_ip")

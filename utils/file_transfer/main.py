@@ -16,13 +16,13 @@ from utils.file_transfer.live_ip_check import live_ip_checker
 from utils.file_transfer.file_downloader import file_download
 
 module_path = "utils/tracker/shared_util/client_uniqueid_to_ip_fetch(c-s).py"
-spec =import_util.spec_from_file_location(None, module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 get_ips_and_netmasks = getattr(module, "get_ips_and_netmasks")
 
 module_path = "utils/tracker/client_ip_reg(c-s).py"
-spec =import_util.spec_from_file_location(None, module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 get_my_connect_ip=getattr(module, "get_my_connect_ip")
@@ -30,13 +30,13 @@ get_netmask=getattr(module, "get_netmask")
 get_ip_address=getattr(module, "get_ip_address")
 
 module_path = "utils/file_transfer/fetch_unique_id_from_hashes(c-s).py"
-spec =import_util.spec_from_file_location(None, module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 fetch_unique_id_from_hashes=getattr(module, "fetch_unique_id_from_hashes")
 
 module_path = "utils/file_transfer/sub_db_downloader(c-s).py"
-spec =import_util.spec_from_file_location(None, module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 subdb_downloader=getattr(module, "subdb_downloader")
