@@ -18,25 +18,54 @@ def db_search(search_bys, searchs):
 
     RESULTS = []
 
+    # check if unique_id is in search_bys
+    unique_id = False
+    if "unique_id" in search_bys:
+        index = search_bys.index("unique_id")
+        unique_id = searchs[index]
+        searchs.pop(index)
+        search_bys.pop(index)
+
     for db in os.listdir(DATABASE_DIR):
         if not os.path.isfile(os.path.join(DATABASE_DIR, db)):
             continue
         if db == ".gitkeep" or db == "file_tree.db":
             continue
+        if unique_id:
+            if(db!=unique_id+".db"):
+                continue
         try:
             conn = sqlite3.connect(os.path.join(DATABASE_DIR, db))
             cursor = conn.cursor()
 
             for table_name in data:
+                exact_searchs = ["id","is_file","parent_id","child_id","lazy_file_check_hash","unique_id","hash"]
                 query = '''
-                    SELECT * FROM {table_name} WHERE {conditions};
-                '''.format(table_name=table_name, conditions=' AND '.join(['{} LIKE ?'.format(search_by) for search_by in search_bys]))
+                    SELECT * FROM {table_name} WHERE {conditions};'''
 
-                cursor.execute(query, ['%' + search + '%' for search in searchs])
+                conds=[]
+                for i in range(len(search_bys)):
+                    if(search_bys[i] in exact_searchs):
+                        conds.append('{} = ?'.format(search_bys[i]))
+                    else:
+                        conds.append('{} LIKE ?'.format(search_bys[i]))
+
+                query=query.format(table_name=table_name,conditions=" AND ".join(conds))
+
+                cur_exec =[]
+                for i in range(len(search_bys)):
+                    if(search_bys[i] in exact_searchs):
+                        cur_exec.append(searchs[i])
+                    else:
+                        cur_exec.append('%' + searchs[i] + '%')
+
+                cursor.execute(query, cur_exec)
                 results = cursor.fetchall()
                 RESULTS.extend(results)
 
             conn.close()
+            if unique_id:
+                break
         except sqlite3.OperationalError as e:
             log(f"Error accessing database file: {os.path.join(DATABASE_DIR, db)}", 2)
             log(f"Error message: {str(e)}", 2)
@@ -44,4 +73,4 @@ def db_search(search_bys, searchs):
     return RESULTS
 
 if __name__ == "__main__":
-    log(db_search(["name","unique_id"],["main","041279ea-3370-40a8-a094-e9cbb5a389f2"]))
+    log(db_search(["id","unique_id"],[5,"041279ea-3370-40a8-a094-e9cbb5a389f2"]))
