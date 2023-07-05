@@ -17,7 +17,7 @@ OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 
-PORT = json.load(open(SERVER_CONFIG))["server_addr"]
+PORT = json.load(open(SERVER_CONFIG))["server_port"]
 
 def update_server(unique_id, ip,local_conn_ip,netmask):
     try:
@@ -45,7 +45,9 @@ def get_ip_address(address):
         ip_address = socket.gethostbyname(address)
         return ip_address
     except socket.gaierror:
-        return None
+        log(f"Either server is down, or we are unable to connect to server at {address}",2)
+        log(f"By default connecting to local host instead of server at {address}",1)
+        return "127.0.0.1"
 
 def get_my_connect_ip(conn_address):
     try:
@@ -100,4 +102,4 @@ def get_netmask(ip_address):
     return None
 
 if __name__ == '__main__':
-    update(Force_update=True)
+    update()

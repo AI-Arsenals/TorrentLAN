@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..
 from utils.log.main import log
 
 module_path = "utils/tracker/client_ip_reg(c-s).py"
-spec =import_util.spec_from_file_location("client_uniqueid_to_ip_fetch_c_s", module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 get_my_connect_ip=getattr(module, "get_my_connect_ip")
@@ -18,7 +18,7 @@ get_ip_address=getattr(module, "get_ip_address")
 SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 
-PORT = json.load(open(SERVER_CONFIG))["server_addr"]
+PORT = json.load(open(SERVER_CONFIG))["server_port"]
 
 def fetch_unique_id_from_hashes(hashes):
     ip = get_ip_address(SERVER_ADDR)

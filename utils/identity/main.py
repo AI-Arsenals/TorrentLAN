@@ -39,7 +39,7 @@ def set_user_name(user_name=None):
     with open(CONFIG, 'w') as f:
         json.dump(data, f)
     log(f"Set user name={user_name}")
-    return
+    return True
     
 if __name__=='__main__':
     generate_client_id()

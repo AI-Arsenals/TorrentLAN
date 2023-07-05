@@ -7,6 +7,7 @@ import base64
 import sqlite3
 import sys
 import select
+import psutil
 
 
 sys.path.append(os.path.abspath(os.path.join(
@@ -16,6 +17,7 @@ from utils.tracker.shared_util.intranet_ips_grabber import get_intranet_ips
 
 LIVE_IP_CHECK_CONFIG= "configs/live_ip_check_config.json"
 SPEED_TEST_DATA_SIZE = json.load(open(LIVE_IP_CHECK_CONFIG))["speed_test_data_size"]
+FILE_TRANSFER_NODE_CONFIG ="configs/file_transfer_node_config.json"
 
 
 HOST = get_intranet_ips()
@@ -138,6 +140,35 @@ def handle_client(conn, addr):
 
 
 def start_server():
+    current_pid=os.getpid()
+
+    if os.path.exists(FILE_TRANSFER_NODE_CONFIG):
+        last_hosts=json.loads(open(FILE_TRANSFER_NODE_CONFIG).read())["last_hosts"]
+        if last_hosts==HOST:
+            EXISTING_PROCESS=False
+            for proc in psutil.process_iter():
+                try:
+                    if (proc.pid != current_pid) and ((("python" in proc.name()))or("python3" in proc.name())) and "utils/file_transfer/node.py" in proc.cmdline():
+                        EXISTING_PROCESS=True
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    pass
+            if EXISTING_PROCESS:
+                log("Server already running with no network adapter ip changes")
+                return
+        else:
+            open(FILE_TRANSFER_NODE_CONFIG,"w").write(json.dumps({"last_hosts":HOST}))
+
+    if not os.path.exists(FILE_TRANSFER_NODE_CONFIG):
+        open(FILE_TRANSFER_NODE_CONFIG,"w").write(json.dumps({"last_hosts":HOST}))
+
+    # Check if the node is already running and terminate it
+    for proc in psutil.process_iter():
+        try:
+            if (proc.pid != current_pid) and (("python" in proc.name())or("python3" in proc.name())) and "utils/file_transfer/node.py" in proc.cmdline():
+                proc.terminate()
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+
     sockets = []
     for host in HOST:
         try:

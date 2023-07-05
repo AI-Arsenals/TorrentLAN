@@ -16,13 +16,13 @@ from utils.file_transfer.live_ip_check import live_ip_checker
 from utils.file_transfer.file_downloader import file_download
 
 module_path = "utils/tracker/shared_util/client_uniqueid_to_ip_fetch(c-s).py"
-spec =import_util.spec_from_file_location("client_uniqueid_to_ip_fetch_c_s", module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 get_ips_and_netmasks = getattr(module, "get_ips_and_netmasks")
 
 module_path = "utils/tracker/client_ip_reg(c-s).py"
-spec =import_util.spec_from_file_location("client_uniqueid_to_ip_fetch_c_s", module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 get_my_connect_ip=getattr(module, "get_my_connect_ip")
@@ -30,13 +30,13 @@ get_netmask=getattr(module, "get_netmask")
 get_ip_address=getattr(module, "get_ip_address")
 
 module_path = "utils/file_transfer/fetch_unique_id_from_hashes(c-s).py"
-spec =import_util.spec_from_file_location("client_uniqueid_to_ip_fetch_c_s", module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 fetch_unique_id_from_hashes=getattr(module, "fetch_unique_id_from_hashes")
 
 module_path = "utils/file_transfer/sub_db_downloader(c-s).py"
-spec =import_util.spec_from_file_location("client_uniqueid_to_ip_fetch_c_s", module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 subdb_downloader=getattr(module, "subdb_downloader")
@@ -208,9 +208,9 @@ class DOWNLOAD_FILE_CLASS:
         for good_path in good_paths:
             if("Premium" in good_path):
                 continue
-            good_path = os.path.abspath(good_path)
+            good_path = os.path.realpath(good_path)
             for file_path in file_paths:
-                file_path = os.path.abspath(file_path)
+                file_path = os.path.realpath(file_path)
                 # Check if file_path is a subdirectory or file within good_path
                 if os.path.commonpath([good_path, file_path]) != good_path:
                     # reporting via threat report
@@ -1101,6 +1101,24 @@ class DOWNLOAD_FILE_CLASS:
         
         return res
     
+    @staticmethod
+    def up_check(unique_id):
+        """
+        check single unique_id if it is up
+        """
+        unique_ids=[unique_id]
+        CACHE_ID_TO_IP={}
+        unique_id_to_ips=get_ips_and_netmasks(unique_ids)
+        c_s_server_ip=get_ip_address(C_S_model_SERVER_ADDR)
+        local_ip=get_my_connect_ip(c_s_server_ip)
+        local_netmask=get_netmask(local_ip)
+        ips_n_speeds=HASH_TO_IP_CLASS.live_and_correct_ips(local_netmask,unique_ids,unique_id_to_ips,CACHE_ID_TO_IP)
+        if not len(ips_n_speeds):
+            log(f"ip is not up for unique_id {unique_id}",2)
+            return False,0
+        speed=sum([speed for _,speed in ips_n_speeds])
+        return True,speed
+
         
     @staticmethod
     def main(unique_id,lazy_file_hash,table_name):
