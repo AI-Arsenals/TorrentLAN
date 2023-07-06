@@ -1,0 +1,49 @@
+
+
+.container{
+    height: 100%;
+    width: 100%;
+    padding: 0;
+    background-color:rgb(48,50,51);
+    /* background-image: linear-gradient(to bottom, red, yellow); */
+    
+    position: sticky;
+    top: 83px;
+}
+
+.sidebar-list{
+    list-style: none;
+    width: 100%;
+    
+    
+    padding: 0px;
+    
+}
+
+
+
+.sidebar-items{
+    width: 100%;
+    
+    padding: 20px 5px;
+    cursor: pointer;
+    display: flex;
+    gap: 1rem;
+    
+    
+   
+}
+
+.sidebar-items:hover{
+    background-color: rgb(94, 94, 94);;
+}
+
+#active{
+    background-color: rgb(23,24,24);
+}
+
+.icon{
+    color: white;
+    margin-left: 8px;
+}
+

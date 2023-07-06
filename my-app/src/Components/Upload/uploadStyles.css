@@ -1,0 +1,18 @@
+.upload-container{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+#uploadButton{
+    border: 1px solid white;
+    color: white;
+}
+
+#uploadButton:disabled{
+    color: black;
+    border: none;
+}
