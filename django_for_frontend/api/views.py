@@ -33,3 +33,12 @@ def getFolderList(request):
     }
     return HttpResponse(json.dumps(dic))
 
+
+def db_search(request):
+    query_dict=request.GET
+    # print(type(query_dict))
+    content=main.db_seacrh(list(query_dict.keys()),list(query_dict.values()))
+
+    dic={'content':content}
+    return HttpResponse(json.dumps(dic))
+
