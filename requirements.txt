@@ -1,3 +1,5 @@
 netifaces==0.11.0
 termcolor==2.3.0
 requests==2.31.0
+djangorestframework==3.14.0
+Django==4.2.3
