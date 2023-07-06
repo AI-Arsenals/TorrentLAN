@@ -17,7 +17,7 @@ const FolderView = (props) => {
     0,
     null,
     null,
-    { Path:"root" ,Size: 89 },
+    { Path:"root_folder" ,Size: 89 },
     null,
     null,
     null,
