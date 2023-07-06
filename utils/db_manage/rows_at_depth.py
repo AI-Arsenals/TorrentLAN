@@ -126,14 +126,14 @@ def rows_at_depth(depth, folder_name=None):
             metadata = {}
             metadata["Size"] = Size_map[file[1]]
             files[i] = list(file)
-            files[i][5] = metadata
+            files[i][5] = str(metadata)
             files[i] = tuple(files[i])
         
         for i, folder in enumerate(folders):
             metadata = {}
             metadata["Size"] = Size_map[folder[1]]
             folders[i] = list(folder)
-            folders[i][5] = metadata
+            folders[i][5] = str(metadata)
             folders[i] = tuple(folders[i])
 
     return files, folders
