@@ -1,4 +1,6 @@
-
+*{
+    box-sizing: border-box;
+}
 
 .container{
     height: 100%;
@@ -13,12 +15,14 @@
 
 .sidebar-list{
     list-style: none;
-    width: 100%;
+    width: auto;
     
     
     padding: 0px;
     
 }
+
+
 
 
 
@@ -29,10 +33,27 @@
     cursor: pointer;
     display: flex;
     gap: 1rem;
+    overflow: hidden;
     
     
    
 }
+
+.collapseButtonContainer{
+    justify-content: right;
+    
+    padding-top: 5px 3px;
+    display: flex;
+}
+
+.collapseButton{
+    padding: 5px 10px;
+}
+.collapseButton:hover{
+    border: 1px solid white;
+}
+
+
 
 .sidebar-items:hover{
     background-color: rgb(94, 94, 94);;

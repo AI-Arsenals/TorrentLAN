@@ -8,13 +8,20 @@
 }
 
 .sidebar{
-    flex: 20%;
+    
     padding: 0;
     height: 100%;
-    width: 100%;
+    width: auto;
+    transition: all 1s ease-in-out;
+    min-width: 40px;
+    
 }
 
 .home-content{
     flex: 80%;
     padding: 0;
+}
+
+.open{
+    width: 40px;
 }

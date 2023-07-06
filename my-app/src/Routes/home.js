@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import FolderView from '../Components/Folders/folder'
 import SideBar from '../Components/Sidebar/sidebar'
@@ -9,13 +9,22 @@ import { Route, Routes } from "react-router-dom";
 
 const Home = (props) => {
 
-  
+  const [isClosed,setIsClosed] = useState(false)
+  const closed_Style ={
+    
+    flex: '0',
+    
+  }
+
+  const open_style={
+    flex: '20%'
+  }
   
   return (
     <div className='main'>
-      <div className="sidebar">
+      <div className="sidebar" style={isClosed? closed_Style:open_style}>
 
-      <SideBar />
+      <SideBar collapseButtonHandler={async()=>{await setIsClosed((isClosed)=> !isClosed)}}/>
       </div>
 
       <div className="home-content">
