@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 
-import FolderView from '../Components/Folders/folder'
+// import FolderView from '../Components/Folders/folder'
 import SideBar from '../Components/Sidebar/sidebar'
 import Dashboard from '../Components/Dashboard/dashboard'
+import DownloadView from '../Components/DownloadView/downloadView'
 import Upload from '../Components/Upload/upload'
 import '../Routes/homeStyle.css'
 import { Route, Routes } from "react-router-dom";
@@ -32,7 +33,7 @@ const Home = (props) => {
 
       <Routes>
         <Route path='' Component={Dashboard}/>
-        <Route path='/download' Component={FolderView}/>
+        <Route path='/download' Component={DownloadView}/>
         <Route path='/upload' Component={Upload}/>
       </Routes>
       </div>
