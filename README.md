@@ -7,7 +7,8 @@
 
 ### Windows
 
-- Download the latest version of .exe file from [here]()
+- Goto [Windows_Installer](https://github.com/AI-Arsenals/TorrentLAN/releases/tag/Windows)
+- Find the latest version (which is not beta) and inside '*assets*' click on `Windows_installer.exe` to download it
 - From start menu, search cmd and open it as administrator
 - Change to the directory where the .exe file is downloaded
 - Run the downloaded .exe to install the software eg- `TorrentLAN-1.0.0.exe` then press enter
@@ -16,9 +17,10 @@
 
 ### Linux
 
-- Download the latest version of .deb file from [here]()
+- Goto [Linux_Installer](https://github.com/AI-Arsenals/TorrentLAN/releases/tag/Windows)
+- Find the latest version (which is not beta) and inside '*assets*' click on `Linux_installer.bin` to download it
 - Open terminal and change to the directory where the .bin file is downloaded
-- Run the downloaded .bin with sudo eg- `sudo ./TorrentLAN-1.0.0.deb` then press enter
+- Run the downloaded .bin with sudo eg- `sudo ./TorrentLAN-1.0.0.bin` then press enter
 - You can see all your data in `Documents/TorrentLAN` folder
 - Now you can use the TorrentLAN application from start menu and desktop shortcut
 
