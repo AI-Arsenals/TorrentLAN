@@ -2,7 +2,9 @@
     display: flex;
     flex-direction: row;
     gap: 1em;
-    justify-content: strech;
+    padding: 10px 5px;
+    background-color: rgb(39,38,38);
+
 }
 
 .heading{
@@ -28,4 +30,54 @@
 
 .rightSideBarWrapper{
     overflow: hidden;
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    justify-content: stretch;
+    
+}
+
+.content{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.properties-list{
+    list-style: none;
+    margin-top: 20px;
+    padding: 0;
+    padding-left: 40px;
+    width: 100% ;
+
+    
+    .property-item{
+        display: flex;
+        
+        flex-direction: row;
+        
+        gap: 1em;
+        margin-top: 10px;
+        border-bottom: 1px solid rgb(146, 144, 144);
+        overflow-x: hidden;
+        align-items: stretch;
+        .property{
+            overflow-x: wrap;
+            
+           word-break: break-all;
+            flex: 0.5;
+            min-width: 80px;
+            /* border: 1px solid white; */
+        }
+
+        .property-value{
+            display: inline-block;
+            overflow-x: wrap;
+            word-break: break-all;
+            flex:1;
+            min-width: 80px;
+            /* border: 1px solid white; */
+        }
+        
+    }
 }

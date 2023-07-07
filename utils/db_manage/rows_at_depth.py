@@ -46,7 +46,7 @@ def rows_at_depth(depth, folder_name=None):
 
             if result:
                 if depth == 0:
-                    files.add((-1, table_name, 0, None,
+                    folders.add((-1, table_name, 0, None,
                               None, None, None, None, None))
                     metadata = json.loads(result[5])
                     if table_name in Size_map:

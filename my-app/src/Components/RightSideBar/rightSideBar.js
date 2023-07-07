@@ -1,17 +1,8 @@
-import React, { useEffect } from 'react'
+
 import '../RightSideBar/rightSideBarStyles.css'
-const RightSideBar = ({rightCollapseButtonHandler}) => {
+const RightSideBar = ({rightCollapseButtonHandler,properties}) => {
 
-    const properties ={
-        prop1:"prop1",
-        prop2:"prop2",
-        prop3:"prop3",
-        prop4:"prop4",
-        prop5:"prop5",
-        prop6:"prop6",
-
-
-    }
+    
 
     
 
@@ -26,7 +17,9 @@ const RightSideBar = ({rightCollapseButtonHandler}) => {
           </div>
         </div>
         <div className="heading">
+            <h4>
             Properties
+            </h4>
         </div>
       </div>
       <div className="content">

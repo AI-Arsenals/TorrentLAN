@@ -5,6 +5,7 @@ import SideBar from '../Components/Sidebar/sidebar'
 import Dashboard from '../Components/Dashboard/dashboard'
 import DownloadView from '../Components/DownloadView/downloadView'
 import Upload from '../Components/Upload/upload'
+import FolderView from '../Components/Folders/folder'
 import '../Routes/homeStyle.css'
 import { Route, Routes } from "react-router-dom";
 
@@ -33,7 +34,7 @@ const Home = (props) => {
 
       <Routes>
         <Route path='' Component={Dashboard}/>
-        <Route path='/download' Component={DownloadView}/>
+        <Route path='/download' Component={FolderView}/>
         <Route path='/upload' Component={Upload}/>
       </Routes>
       </div>
