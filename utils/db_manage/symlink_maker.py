@@ -1,6 +1,7 @@
 import os
 import platform
 import sys
+import time
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), '..', '..')))
@@ -23,8 +24,15 @@ def create_symlink(source_path,dest_dir):
                     return False
             if not window_is_admin():
                 # Re-launch the script with administrative privileges
-                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
-                return
+                log(f"Please allow the permission to add the file")
+                result=ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+                # result==42 if succeedded else 5
+                # wait for 10 seconds before returning false if file is not created
+                for i in range(1,10):
+                    time.sleep(1)
+                    if(os.path.exists(dest_dir)) and result==42:
+                        return True
+                return False
         
         os.symlink(source_path,dest_path)
         log(f"Symlink created successfully from {source_path} to {dest_path}")
@@ -32,4 +40,4 @@ def create_symlink(source_path,dest_dir):
         log(f"Failed to create symbolic link: {e}",2)
 
 if __name__=="__main__":
-    create_symlink("./",r"C:\Users\prakh\Desktop\Home")
+    pass

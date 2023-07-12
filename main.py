@@ -1,8 +1,14 @@
+import platform
+import sys
+import os
+import subprocess
 import importlib.util as import_util
 from utils.identity.main import set_user_name
 from utils.file_transfer.main import DOWNLOAD_FILE_CLASS
 from utils.db_manage.db_create import main as db_create_main
 from utils.db_manage.symlink_maker import create_symlink
+from utils.log.main import log
+
 
 module_path = "utils/tracker/client(c-s).py"
 spec = import_util.spec_from_file_location("", module_path)
@@ -39,6 +45,7 @@ spec = import_util.spec_from_file_location("", module_path)
 module = import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 web_download = getattr(module, "main")
+
 
 def set_username(user_name: str) -> bool:
     """
@@ -154,7 +161,8 @@ def db_update() -> bool:
 
     return True
 
-def rows_at_depth(depth : int, folder_name = None) -> tuple[list,list]:
+
+def rows_at_depth(depth: int, folder_name=None) -> tuple[list, list]:
     """
     --Finds rows at particular depth
     - if 'depth'=0 or 'depth'=1 then no need to provide 'folder_name'
@@ -164,28 +172,29 @@ def rows_at_depth(depth : int, folder_name = None) -> tuple[list,list]:
 
     Arguments:
         depth (int) : depth at while the files u want to see
-    
+
     Returns :
         files (list) : list of tuples and each tuple is same as a row in db, the tuples are of only file
         folders (list) : list of tuples and each tuple is same as a row in db, the tuples are of only folder
     """
 
-    files,folders=fetch_rows_at_depth(depth,folder_name)
-    return files,folders
+    files, folders = fetch_rows_at_depth(depth, folder_name)
+    return files, folders
 
-def web_downloader(url : str, output_filename=None,output_dir=None):
+
+def web_downloader(url: str, output_filename=None, output_dir=None):
     """
     -- downloads files from web using multiple fragments download, it is useful when server hosting the file limits a single download speed
-    
+
     Arguments:
         url (str) : url of the file to download
         output_filename (str) : if u want to yourself specify the filename (Default is os.path.basename(url))
         output_dir(str) : if u want to specify download location (Default is data/Web_downloader)
     """
 
-    web_download(url,output_filename,output_dir)
+    web_download(url, output_filename, output_dir)
 
-def upload(source_path : str, dest_dir : str):
+def upload(source_path: str, dest_dir: str):
     """
     --create a symlink
     - frontend should ask user source_path and then some inapp ui based to make them select the dest_dir
@@ -196,11 +205,17 @@ def upload(source_path : str, dest_dir : str):
         source_path (str) : path of a file or folder that is to be uploaded
         dest_path (str) :  path where the pointer(symlink) [eg- ./data/Normal/Games if we suppose source_path is a game] 
     """
-
-    create_symlink(source_path,dest_dir)
+    if source_path == "" or dest_dir == "":
+        log("source_path or dest_dir is empty", 2)
+        return False
+    res=create_symlink(source_path, dest_dir)
+    if(res==False):
+        return False
     db_update()
+    return True
 
-def db_seacrh(search_bys:list , searchs:list) -> list:
+
+def db_seacrh(search_bys: list, searchs: list) -> list:
     """
     --Searches with AND filter in db
     - search_bys is list of columns to search in
@@ -212,11 +227,10 @@ def db_seacrh(search_bys:list , searchs:list) -> list:
     Arguments:
         search_bys (list) : list of columns to search in
         searchs (list) : list of values to search for
-    
+
     Returns :
         list : list of tuples and each tuple is same as a row in db
     """
 
-    results=search_db(search_bys,searchs)
+    results = search_db(search_bys, searchs)
     return results
-    

@@ -53,7 +53,7 @@ def upload(request):
    
     data=json.loads(request.body.decode())
     print(data['source_path'])
-    main.upload(data['source_path'],'./data/Normal/Games')
+    main.upload(os.path.realpath(data['source_path']),os.path.realpath('./data/Normal/Games'))
     return HttpResponse('uploading file')
     
 
