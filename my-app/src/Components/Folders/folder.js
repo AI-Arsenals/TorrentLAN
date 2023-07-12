@@ -6,6 +6,7 @@ import RightSideBar from "../RightSideBar/rightSideBar";
 import FolderItem from "./folder-item";
 
 
+
 const FolderView = (props) => {
   const [rightIsClosed, setRightIsClosed] = useState(false);
   const closed_Style = {
@@ -171,6 +172,7 @@ const FolderView = (props) => {
                 className="fa-solid fa-arrow-left fa-2xl"
                 onClick={backButtonHandler}
               ></i>
+              
               <div className="dir-text">{dir}</div>
             </div>
 
@@ -181,6 +183,7 @@ const FolderView = (props) => {
                     className="fa-regular fa-circle-down fa-2xl"
                     onClick={downloadHandler}
                   ></i>
+                  
                   <i className="fa-regular fa-circle-xmark fa-2xl" onClick={deselectAll}></i>
 
                 </div>

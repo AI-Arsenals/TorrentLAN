@@ -5,6 +5,7 @@
     align-items: flex-start;
     height: 100%;
     width: 100%;
+    
 }
 
 .sidebar{
@@ -14,6 +15,8 @@
     width: auto;
     transition: all 1s ease-in-out;
     min-width: 40px;
+    position: sticky;
+    
     
 }
 
@@ -21,6 +24,8 @@
     flex: 80%;
     padding: 0;
     height: 100%;
+    overflow-y: auto;
+   
 }
 
 .open{

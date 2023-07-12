@@ -8,11 +8,9 @@ const MyDropzone=({setter})=> {
   const onDrop = useCallback (async acceptedFiles => {
     // Do something with the files
     if(acceptedFiles?.length){
-      
-      await setter(prevPaths=>[
-        
-        ...acceptedFiles.map(file=>file.path)
-      ])
+      let new_paths = acceptedFiles.map(file=>file.path)
+      console.log(new_paths)
+      await setter(new_paths)
     }
     
   }, [])

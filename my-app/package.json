@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "private": true,
   "options": {
-    "allowedHosts": ["localhost", ".localhost"],
+    "allowedHosts": [
+      "localhost",
+      ".localhost"
+    ],
     "proxy": "http://127.0.0.1:8000/"
   },
   "dependencies": {
@@ -18,6 +21,7 @@
     "react-dropzone": "^14.2.3",
     "react-router-dom": "^6.11.2",
     "react-scripts": "5.0.1",
+    "react-toastify": "^9.1.3",
     "web-vitals": "^2.1.4"
   },
   "main": "public/electron.js",
@@ -48,6 +52,7 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "concurrently": "^8.2.0",
     "cross-env": "^7.0.3",
     "electron": "^25.1.1",

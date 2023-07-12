@@ -24,7 +24,7 @@ def create_symlink(source_path,dest_dir):
             if not window_is_admin():
                 # Re-launch the script with administrative privileges
                 ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
-                sys.exit()
+                return
         
         os.symlink(source_path,dest_path)
         log(f"Symlink created successfully from {source_path} to {dest_path}")

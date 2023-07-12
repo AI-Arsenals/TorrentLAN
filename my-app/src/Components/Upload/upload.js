@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import DragDrop from '../DragDrop/DragDrop'
 import LoadingBar from '../LoadingBar/loadingBar'
 import './uploadStyles.css'
+
+import {toast,ToastContainer} from 'react-toastify'
 const Upload = (props) => {
   
   const [path,setPath] = useState([])
@@ -15,6 +17,7 @@ const Upload = (props) => {
       
       if(str1[index]!==str2[index]){
         return str1.slice(0,sliceInd+1);
+        
       }
 
       if(str1[index]=='\\'){
@@ -58,22 +61,58 @@ const Upload = (props) => {
     }
   },[path])
 
-  
+  const notify = () => {
+    toast("Default Notification !");
+
+    toast.success("Success Notification !", {
+      position: toast.POSITION.TOP_CENTER
+    });
+
+    toast.error("Error Notification !", {
+      position: toast.POSITION.TOP_LEFT
+    });
+
+    toast.warn("Warning Notification !", {
+      position: toast.POSITION.BOTTOM_LEFT
+    });
+
+    toast.info("Info Notification !", {
+      position: toast.POSITION.BOTTOM_CENTER
+    });
+
+    toast("Custom Style Notification with css class!", {
+      position: toast.POSITION.BOTTOM_RIGHT,
+      className: 'foo-bar'
+    });}
 
   const uploadButtonHandler = ()=>{
     console.log(path)
     var rootDir = findRootDir()
     var children = getChildren(rootDir.length)
-    console.log(rootDir)
-    console.log(children)
+    let data={'source_path':rootDir}
+    data=JSON.stringify(data)
+    fetch('api/upload',{method:'POST',
+    data: data,
+    body:data,
+    headers: {
+      "Content-type": "application/json; charset=UTF-8"
+    }
+    
+  })
+    alert("Upload successful")
+    console.log('upload successful',{})
     setPath([])
   }
   return (
     <div className='upload-container'>
+      
       <DragDrop className='default' setter={setPath}/>
       <LoadingBar progress='70' title='Uploading'/>
 
       <button id='uploadButton' onClick={uploadButtonHandler} disabled={!uploadButtonVisible}>Upload</button>
+      
+      <button onClick={notify}>Notify</button>;
+          
     </div>
   )
 }
