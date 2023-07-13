@@ -194,7 +194,7 @@ def web_downloader(url: str, output_filename=None, output_dir=None):
 
     web_download(url, output_filename, output_dir)
 
-def upload(source_path: str, dest_dir: str):
+def upload(source_paths: list, dest_dir: str) -> tuple[bool,list]:
     """
     --create a symlink
     - frontend should ask user source_path and then some inapp ui based to make them select the dest_dir
@@ -202,17 +202,21 @@ def upload(source_path: str, dest_dir: str):
     - if the user OS is windows then frontend should notify before hand that he need to click yes in popup to upload file, if the user doesn't want to do that, then open the folder of ./data and tell the user to put the data accordingly (eg - inside ./data/Normal/Games)
 
     Arguments:
-        source_path (str) : path of a file or folder that is to be uploaded
+        source_paths (str) : paths of files and folders that is to be uploaded
         dest_path (str) :  path where the pointer(symlink) [eg- ./data/Normal/Games if we suppose source_path is a game] 
+
+    Returns:
+        bool: True if all symlinks are created else False
+        list: bool array representing which symlink is created and which is not corresponding to index of source_paths
     """
-    if source_path == "" or dest_dir == "":
+    if len(source_paths) == 0 or dest_dir == "":
         log("source_path or dest_dir is empty", 2)
         return False
-    res=create_symlink(source_path, dest_dir)
+    res,arr=create_symlink(source_paths, dest_dir)
     if(res==False):
-        return False
+        return False,arr
     db_update()
-    return True
+    return True,arr
 
 
 def db_seacrh(search_bys: list, searchs: list) -> list:
