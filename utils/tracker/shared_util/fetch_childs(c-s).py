@@ -24,7 +24,7 @@ def fetch_childs(unique_id,lazy_file_hash):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(60)
+            s.settimeout(20)
             log(f"Connecting to {ip} for fetching childs from unique id{unique_id} and lazy file hash {lazy_file_hash}")
             s.connect((ip, PORT))
             log("Connected to server")

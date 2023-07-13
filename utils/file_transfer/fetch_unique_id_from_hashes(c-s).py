@@ -26,7 +26,7 @@ def fetch_unique_id_from_hashes(hashes):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(30)
+            s.settimeout(600)
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}

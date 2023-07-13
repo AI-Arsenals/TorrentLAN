@@ -28,6 +28,7 @@ def update_server(unique_id, ip):
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             log(f"Connecting to server at {ip}")
+            s.timeout(40)
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}

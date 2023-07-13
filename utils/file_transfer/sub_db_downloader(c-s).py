@@ -35,7 +35,7 @@ def subdb_downloader(unique_id,lazy_file_hash):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(60)
+            s.settimeout(30)
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}

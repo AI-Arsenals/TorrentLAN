@@ -24,7 +24,7 @@ def get_ips_and_netmasks(unique_ids):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(60)
+            s.settimeout(10)
             log(f"Connecting to {ip} for fetching ips and netmasks from unique ids")
             s.connect((ip, PORT))
             log("Connected to server")
