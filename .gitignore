@@ -10,3 +10,4 @@ dist/*
 data/.db/*.db
 !dist/*.whl
 build/*
+test_folders/
