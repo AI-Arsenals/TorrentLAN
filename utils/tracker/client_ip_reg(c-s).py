@@ -24,7 +24,7 @@ def update_server(unique_id, ip,local_conn_ip,netmask):
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             log(f"Connecting to server at {ip}")
-            s.timeout(5)
+            s.settimeout(5)
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}
@@ -38,6 +38,10 @@ def update_server(unique_id, ip,local_conn_ip,netmask):
         s.close()
         return True
     except ConnectionRefusedError:
+        log("Server is down",2)
+        return False
+    except socket.timeout:
+        log("Connection timed out",2)
         log("Server is down",2)
         return False
 
