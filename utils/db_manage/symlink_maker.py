@@ -15,7 +15,6 @@ def create_symlink(source_path, dest_dir):
     dest_path = os.path.realpath(dest_dir + os.sep + source_name)
     source_path = os.path.realpath(source_path)
     dest_path = os.path.realpath(dest_path)
-    log(f'source_path: {source_path}, dest_path: {dest_path}')
     try:
         if platform.system() == "Windows":
             import ctypes
@@ -56,7 +55,5 @@ def create_symlink(source_path, dest_dir):
         log(f"Failed to create symbolic link: {e}", 2)
 
 if __name__ == "__main__":
-    log(f'Arguments: {sys.argv}, len is {len(sys.argv)}')
     if len(sys.argv) == 3:
-        log(f'args_decoded args: {os.path.realpath(base64.b64decode(sys.argv[1]).decode())}, {os.path.realpath(base64.b64decode(sys.argv[2]).decode())}')
         create_symlink(os.path.realpath(base64.b64decode(sys.argv[1]).decode()), os.path.realpath(base64.b64decode(sys.argv[2]).decode()))
