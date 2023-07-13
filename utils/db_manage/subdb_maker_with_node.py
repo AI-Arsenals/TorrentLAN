@@ -37,7 +37,7 @@ def subdb_maker(unique_id, lazy_file_hash, subdb_filename):
     with open(CONFIG_FOLDER_LOCATION) as f:
         data = json.load(f)
 
-    if os.path.exists(os.path.join(SUB_DB_PATH, subdb_filename))  or db=="file_tree".db:
+    if os.path.exists(os.path.join(SUB_DB_PATH, subdb_filename))  or unique_id=="file_tree":
         return True
     for db in os.listdir(DATABASE_DIR):
         if (not os.path.isfile(os.path.join(DATABASE_DIR, db))):
