@@ -16,7 +16,7 @@ const MyDropzone=({setter,setFetchingPath})=> {
     }
     await setFetchingPath(false)
     
-  }, [])
+  }, [setter,setFetchingPath])
 
   const onDragEnter =useCallback(async =>{
     setFetchingPath(true)

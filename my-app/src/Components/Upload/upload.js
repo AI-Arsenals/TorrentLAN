@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import DragDrop from "../DragDrop/DragDrop";
-import LoadingBar from "../LoadingBar/loadingBar";
+
 import DefaultDragDrop from "../DefaultDragDrop/dragDrop";
 import "./uploadStyles.css";
 import Select from "react-select";
@@ -8,44 +7,11 @@ import Select from "react-select";
 const Upload = (props) => {
   const [path, setPath] = useState([]);
   const [uploadButtonVisible, setUploadButtonVisible] = useState(false);
-  const [fetchingPath, setFetchingPath] = useState(false);
+  
 
-  const findIntersection = (str1, str2) => {
-    const minlength = Math.min(str1.length, str2.length);
-    var sliceInd = 0;
-    for (let index = 0; index < minlength; index++) {
-      if (str1[index] !== str2[index]) {
-        return str1.slice(0, sliceInd + 1);
-      }
+ 
 
-      if (str1[index] == "\\") {
-        sliceInd = index;
-      }
-    }
-    return str1.slice(0, minlength);
-  };
-
-  const findRootDir = () => {
-    var intersection = path[0].slice(0, path[0].lastIndexOf("\\") + 1);
-    console.log("intersectio: " + intersection);
-    for (let index = 1; index < path.length; index++) {
-      intersection = findIntersection(intersection, path[index]);
-    }
-    return intersection;
-  };
-
-  const getChildren = (rootDirLength) => {
-    var children = new Set([]);
-    var child = "";
-    var ind = 0;
-    for (let index = 0; index < path.length; index++) {
-      ind = path[index].indexOf("\\", rootDirLength);
-      ind = ind > -1 ? ind : path[index].length;
-      child = path[index].slice(rootDirLength, ind);
-      children.add(child);
-    }
-    return children;
-  };
+ 
 
   useEffect(() => {
     if (path.length > 0) {
@@ -55,24 +21,7 @@ const Upload = (props) => {
     }
   }, [path]);
 
-  // const uploadButtonHandler = ()=>{
-  //   console.log(path)
-  //   var rootDir = findRootDir()
-  //   var children = getChildren(rootDir.length)
-  //   let data={'source_path':rootDir}
-  //   data=JSON.stringify(data)
-  //   fetch('api/upload',{method:'POST',
-  //   data: data,
-  //   body:data,
-  //   headers: {
-  //     "Content-type": "application/json; charset=UTF-8"
-  //   }
-
-  // })
-  //   alert("Upload successful")
-  //   console.log('upload successful',{})
-  //   setPath([])
-  // }
+ 
 
   const uploadButtonHandler = async () => {
 
@@ -110,9 +59,7 @@ const Upload = (props) => {
   ];
   const [destFolder, setDestFolder] = useState(null);
   const DropDown = () => {
-    const selectionChangeHandler = (event) => {
-      setDestFolder(event.target.value);
-    };
+    
     return (
       <>
         <Select
@@ -150,7 +97,7 @@ const Upload = (props) => {
         onClick={uploadButtonHandler}
         disabled={!uploadButtonVisible}
       >
-        {fetchingPath ? "Loading..." : "Upload"}
+        Upload
       </button>
     </div>
   );

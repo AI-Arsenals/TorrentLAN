@@ -9,6 +9,7 @@ import FolderItem from "./folder-item";
 
 const FolderView = (props) => {
   const [rightIsClosed, setRightIsClosed] = useState(false);
+  
   const closed_Style = {
     flex: "0",
   };
@@ -34,6 +35,7 @@ const FolderView = (props) => {
   const [downloadList, setDownloadList] = useState([]);
   const [currFolder, setCurrFolder] = useState(defualtFolder);
   const [properties, setProperties] = useState([]);
+  const [highlightedFolder,setHighlightedFolder] = useState(null);
 
   const setContentList = (data)=>{
     data['folders'].forEach((item,index,array)=>{
@@ -76,8 +78,8 @@ const FolderView = (props) => {
     }
   };
 
-  const deselectAll = () => {
-    setDownloadList([]);
+  const deselectAll = async() => {
+    await setDownloadList([]);
 
     var list = document.querySelectorAll(".selected");
     list.forEach((element) => {
@@ -85,7 +87,29 @@ const FolderView = (props) => {
     });
   };
 
+  const deselectHighlighted = () =>{
+    var list = document.querySelectorAll(".highlighted");
+    list.forEach((element)=>{
+      element.classList.remove("highlighted")
+    })
+
+    setHighlightedFolder(null)
+  }
+
+  const handleClick = async (item)=>{
+    if(highlightedFolder===item){
+      await setCurrFolder(item);
+    }
+    else{
+      await deselectAll();
+      await deselectHighlighted();
+      await setHighlightedFolder(item)
+
+    }
+  }
+
   const select = (name) => {
+    deselectHighlighted();
     if (downloadList.find((e) => e === name)) {
       setDownloadList((prev) => prev.filter((e) => e !== name));
     } else {
@@ -97,26 +121,39 @@ const FolderView = (props) => {
     console.log(downloadList);
   };
 
-  useEffect(() => {
-    getFolderList();
 
-    deselectAll();
+  const switchFolder = async() =>{
+    await getFolderList();
+    deselectHighlighted()
+    deselectAll()
+  }
+
+  useEffect(() => {
+    switchFolder()
   }, [currFolder]);
 
   useEffect(() => {
     let temp_properties={};
-    if (downloadList.length === 0) {
+    if (downloadList.length === 0 && highlightedFolder===null) {
       temp_properties['Name']=currFolder[1];
       temp_properties={...temp_properties, ...currFolder[5]};
-    } else {
+    } 
+    
+    else if(highlightedFolder!==null){
+      temp_properties['Name']=highlightedFolder[1];
+      temp_properties={...temp_properties,...highlightedFolder[5]};
+    }
+    else {
       temp_properties['Name']=downloadList[downloadList.length-1][1]
       temp_properties={...temp_properties,...downloadList[downloadList.length-1][5]};
       
     }
     setProperties(temp_properties)
-  }, [currFolder, downloadList]);
+  }, [currFolder, downloadList,highlightedFolder]);
 
   const backButtonHandler = async () => {
+    
+    deselectHighlighted();
     let response, data;
     if (currFolder[3] === null) {
       if (currFolder[0] === "default") {
@@ -199,11 +236,8 @@ const FolderView = (props) => {
               key={index}
               name={item[1]}
               type="folder"
-              handleClick={async () => {
-                
-                await setCurrFolder(item);
-              }}
-              handleRightClick={() => select(item)}
+              handleClick={() => handleClick(item)}
+              handleRightClick={()=>select(item)}
             />;
           })}
 

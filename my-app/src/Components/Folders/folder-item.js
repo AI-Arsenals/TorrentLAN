@@ -14,12 +14,25 @@ const FolderItem = (props) => {
     }
   }
 
+
+  const handleLeftClick = async (event) =>{
+    await props.handleClick()
+    if(props.type==="folder"){
+
+      if(!event.target.classList.contains("highlighted")){
+        event.target.classList.add("highlighted")
+      }
+  
+      
+    }
+  } 
+
   
 
     
   return (
     <div className="folder-item" >
-      <button className="folder-div" id={props.path} onClick={props.handleClick} onContextMenu={(event)=>{makeActive(event)}}>
+      <button className="folder-div" id={props.path} onClick={(event)=> {handleLeftClick(event)}} onContextMenu={(event)=>{makeActive(event)}}>
 
         <img src={props.type==="folder"?FolderIcon:FileIcon} alt="folder-icon" className="folder-icon" />
       </button>

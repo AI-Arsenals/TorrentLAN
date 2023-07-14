@@ -44,6 +44,11 @@
     border: 1px dashed white;
 }
 
+.highlighted{
+    background-color: rgb(145, 145, 236);
+    border: 1px dashed white;
+}
+
 button{
     background: none;
 	color: inherit;
