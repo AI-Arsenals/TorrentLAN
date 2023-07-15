@@ -78,16 +78,16 @@ def rows_at_depth(depth, folder_name=None):
                         if row_data[2] == 1:
                             files.add((-2, row_data[1], 1, None,
                                         None, None, None, None, None))
-                            metadata = json.loads(result[5])
-                            if table_name in Size_map:
+                            metadata = json.loads(row_data[5])
+                            if row_data[1] in Size_map:
                                 Size_map[row_data[1]] += int(metadata["Size"])
                             else:
                                 Size_map[row_data[1]] = int(metadata["Size"])
                         else:
                             folders.add((-2, row_data[1], 0, None,
                                         None, None, None, None, None))
-                            metadata = json.loads(result[5])
-                            if table_name in Size_map:
+                            metadata = json.loads(row_data[5])
+                            if row_data[1] in Size_map:
                                 Size_map[row_data[1]] += int(metadata["Size"])
                             else:
                                 Size_map[row_data[1]] = int(metadata["Size"])

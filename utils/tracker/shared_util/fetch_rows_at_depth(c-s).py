@@ -25,7 +25,7 @@ def fetch_rows_at_depth(depth,folder_name=None):
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(20)
-            log(f"Connecting to {ip} for fetching rows at depth{depth} with folder_name {folder_name}")
+            log(f"Connecting to {ip} for fetching rows at depth {depth} with folder_name {folder_name}")
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}

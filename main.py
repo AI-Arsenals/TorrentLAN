@@ -123,28 +123,6 @@ def childs(unique_id: str, lazy_file_hash: str) -> tuple[list, list]:
     return files, folders
 
 
-def upload_file(path: str) -> bool:
-    """
-    --file upload for seeding
-    -update db
-    -upload server with new db
-    -do ip registration
-
-    Arguments:
-        path (str): Path of file to upload
-
-    Returns:
-        bool: True if success else False
-    """
-
-    # value = create_link
-    db_create_main(FORCE_UPDATE=True)
-    update_server_with_db()
-    update_server_with_ip()
-
-    # return value
-
-
 def db_update() -> bool:
     """
     --update db
@@ -207,7 +185,7 @@ def upload(source_paths: list, dest_dir: str) -> tuple[bool,list]:
 
     Returns:
         bool: True if all symlinks are created else False
-        list: bool array representing which symlink is created and which is not corresponding to index of source_paths
+        list: bool(or 0,1) array representing which symlink is created and which is not corresponding to index of source_paths 
     """
     if len(source_paths) == 0 or dest_dir == "":
         log("source_path or dest_dir is empty", 2)

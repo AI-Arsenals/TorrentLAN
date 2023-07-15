@@ -7,11 +7,11 @@ import Select from "react-select";
 const Upload = (props) => {
   const [path, setPath] = useState([]);
   const [uploadButtonVisible, setUploadButtonVisible] = useState(false);
-  
 
- 
 
- 
+
+
+
 
   useEffect(() => {
     if (path.length > 0) {
@@ -21,34 +21,44 @@ const Upload = (props) => {
     }
   }, [path]);
 
- 
+
 
   const uploadButtonHandler = async () => {
 
-    if(destFolder===null){
+    if (destFolder === null) {
       alert("Please select destination folder")
       return;
     }
 
     let data;
+    if (navigator.userAgent.toLowerCase().includes("win")) {
+      alert("Click on yes on the permission to upload");
+      console.log("Click on yes on the permission to upload", {});
+      setTimeout(function() {
+        // 1.0 sec wait time so user can read the alert
+      }, 1000);
+      // Devloper- instead of timeout we can run below commands once it click on OK in the alert box
+    }
+    else{
+      alert("Devloper (please remove this alert)(as os is not windows so no need to click on allow)");
+      console.log("Devloper (please remove this alert)(as os is not windows so no need to click on allow)", {});
+    }
 
-    path.forEach(async p=>{
+    path.forEach(async p => {
 
       data = { source_path: p, dest_path: destFolder["value"] };
-    data = JSON.stringify(data);
-    await fetch("api/upload", {
-      method: "POST",
-      data: data,
-      body: data,
-      headers: {
-        "Content-type": "application/json; charset=UTF-8",
-      },
-    });
+      data = JSON.stringify(data);
+      await fetch("api/upload", {
+        method: "POST",
+        data: data,
+        body: data,
+        headers: {
+          "Content-type": "application/json; charset=UTF-8",
+        },
+      });
 
     })
-    
-    alert("Upload successful");
-    console.log("upload successful", {});
+
     setPath([]);
   };
 
@@ -59,7 +69,7 @@ const Upload = (props) => {
   ];
   const [destFolder, setDestFolder] = useState(null);
   const DropDown = () => {
-    
+
     return (
       <>
         <Select
