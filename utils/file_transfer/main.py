@@ -14,6 +14,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..
 from utils.log.main import log
 from utils.file_transfer.live_ip_check import live_ip_checker
 from utils.file_transfer.file_downloader import file_download
+from utils.dashboard_db.main import update_dashboard_db
 
 module_path = "utils/tracker/shared_util/client_uniqueid_to_ip_fetch(c-s).py"
 spec =import_util.spec_from_file_location("", module_path)
@@ -229,7 +230,7 @@ class DOWNLOAD_FILE_CLASS:
         os.makedirs(folder_path, exist_ok=True)
     
     @staticmethod
-    def handle_download(file_paths, file_sizes, file_hashes,table_names):
+    def handle_download(file_paths, file_sizes, file_hashes,table_names,name__api="",unique_id__api="",lazy_file_hash__api="",file_loc__api="",api_loc=None):
         """
         Handle download
         """
@@ -368,6 +369,11 @@ class DOWNLOAD_FILE_CLASS:
             progress = downloaded / TOTAL_SIZE
             progress_percent = int(progress * 100)
             total_bar_length = int(progress*25)
+
+            # nonlocal api_loc
+            # if api_loc:
+            #     nonlocal lazy_file_hash__api
+            #     send percentage at api_loc
 
             bar = ('#' * (total_bar_length) + '-' * ((25 - total_bar_length)))
 
@@ -941,6 +947,7 @@ class DOWNLOAD_FILE_CLASS:
         SEG_DONE_CNT={}
         SEG_DONE_CNT_lock=threading.Lock()
         log("Starting download.........................")
+        update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,0,TOTAL_SIZE,file_loc__api)
         # high speed downloads
         threads=[]
         if len(big_file_info):
@@ -984,6 +991,9 @@ class DOWNLOAD_FILE_CLASS:
             log(f"Unable to download all files , following files are not downloaded {FAILED_DOWNLOADS}",2)
             log(f"Please rerun the download again or we can automatically shedule the download for you",2)
             log(f"Failed download can also mean that the node has deleted the file and not updated the server yet",1)
+            update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,LOCKS.access_DOWNLOADED_SIZE(None,None,fetch=True),TOTAL_SIZE,file_loc__api)
+            # if api_loc:
+            #     send 0 percentage at api_loc
             return False
         elif not(RETRY_DOWNLOADS.empty()):
             file_paths=[]
@@ -994,6 +1004,9 @@ class DOWNLOAD_FILE_CLASS:
             log(f"Please rerun the download again or we can automatically shedule the download for you",2) 
             log(f"Total time taken {time.time()-start_time} seconds",0) 
             log(f"Failed download can also mean that the node has deleted the file and not updated the server yet",1)
+            update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,LOCKS.access_DOWNLOADED_SIZE(None,None,fetch=True),TOTAL_SIZE,file_loc__api)
+            # if api_loc:
+            #  send percentage at api_loc
             return False
         else:
             bar = ('#' * (25) + '-' * ((25 - 25)))
@@ -1003,6 +1016,9 @@ class DOWNLOAD_FILE_CLASS:
             log("\nDownload complete")
             log(f"Downloaded {file_paths}",0)
             log(f"Total time taken {time.time()-start_time} seconds",0)
+            update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,100,TOTAL_SIZE,file_loc__api)
+            # if api_loc:
+            #  send 100 percentage at api_loc
             
             # remove .tmp_download files
             tmp_downloads=[]
@@ -1017,7 +1033,7 @@ class DOWNLOAD_FILE_CLASS:
             return True
     
     @staticmethod
-    def process_subdb(subdb_filename,table_name):
+    def process_subdb(subdb_filename,table_name,name__api="",unique_id__api="",lazy_file_hash__api="",file_loc__api="",api_loc=None):
         """
         Create directory structure
         """
@@ -1095,7 +1111,7 @@ class DOWNLOAD_FILE_CLASS:
             return True
 
         # Handle file downloading
-        res= DOWNLOAD_FILE_CLASS.handle_download(file_paths,file_sizes,file_hashes,table_names)
+        res= DOWNLOAD_FILE_CLASS.handle_download(file_paths,file_sizes,file_hashes,table_names,name__api,unique_id__api,lazy_file_hash__api, file_loc__api,api_loc)
         if (res):
             os.remove(subdb_dir)
         
@@ -1121,10 +1137,12 @@ class DOWNLOAD_FILE_CLASS:
 
         
     @staticmethod
-    def main(unique_id,lazy_file_hash,table_name):
+    def main(unique_id,lazy_file_hash,table_name,name__api="",file_loc__api="",api_loc=None):
         """
         Main function
         """
+
+        update_dashboard_db('Download',name__api,unique_id,lazy_file_hash,table_name,0,0,file_loc__api)
 
         # Download subdb
         result=subdb_downloader(unique_id,lazy_file_hash)
@@ -1136,7 +1154,9 @@ class DOWNLOAD_FILE_CLASS:
         subdb_filename=result
 
         # Process subdb and download files
-        res=DOWNLOAD_FILE_CLASS.process_subdb(subdb_filename,table_name)
+        unique_id__api=unique_id
+        lazy_file_hash__api=lazy_file_hash
+        res=DOWNLOAD_FILE_CLASS.process_subdb(subdb_filename,table_name,name__api,unique_id__api,lazy_file_hash__api,file_loc__api,api_loc)
         if res:
             log(f"Downloaded lazy_file_hash {lazy_file_hash} Successfully",0)
         else:

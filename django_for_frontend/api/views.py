@@ -7,6 +7,8 @@ import json
 # Create your views here.
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 import main
+import utils.django_utils.dashboard_cache as dashboard_cache
+from utils.dashboard_db.main import fetch_all_entries
 
 def jsonify(s):
     return json.loads(s.replace("'",'"'))
@@ -88,5 +90,20 @@ def upload(request):
     print(data['dest_path'])
     # main.upload(os.path.realpath(data['source_path']),os.path.realpath('./data/Normal/'+data['dest_path']))
     return HttpResponse('uploading file')
+
+
+@api_view(['GET'])
+def getDashboard(request):
+    data=fetch_all_entries()
+    return HttpResponse(data)
+
+@api_view(['GET'])
+def getDashboard_cache():
+    return HttpResponse(dashboard_cache.cache_fetch())
+
+@api_view(['POST'])
+def updateDashboard_cache(request):
+    dashboard_cache.cache_update(request.body.decode())
+    return HttpResponse('updated')
     
 
