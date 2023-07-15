@@ -8,15 +8,16 @@ import json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 import main
 
+def jsonify(s):
+    return json.loads(s.replace("'",'"'))
 
-
-def jsonify(content):
+def preprocess(content):
 
     units = ['B','KB','MB','GB','TB']
 
     for l in content:
         for i in range(len(l)):
-            l[i][5] = json.loads(l[i][5].replace("'",'"'))
+            l[i][5] = jsonify(l[i][5])
             size = float(l[i][5]['Size'])
             unit = 0
             while(1024<=size):
@@ -30,6 +31,8 @@ def jsonify(content):
     return content
 
 
+
+
 @api_view(['GET'])
 def getFolderListAtDepth(request):
     depth=request.GET.get('depth',None)
@@ -41,7 +44,7 @@ def getFolderListAtDepth(request):
     
     
     content=main.rows_at_depth(depth=int(depth),folder_name=folder)
-    content=jsonify(content)
+    content=preprocess(content)
     dic={}
     dic['files']=content[0]
     dic['folders']=content[1]
@@ -55,7 +58,7 @@ def getFolderList(request):
     lazy_file_hash=request.GET.get('lazy_file_hash',None)
     content = main.childs(unique_id=unique_id,lazy_file_hash=lazy_file_hash)
 
-    content = jsonify(content)
+    content = preprocess(content)
     
     dic={
         'files': content[0],
@@ -69,7 +72,7 @@ def db_search(request):
     query_dict=request.GET
     # print(type(query_dict))
     content=main.db_seacrh(list(query_dict.keys()),list(query_dict.values()))
-
+    content[0][5] = jsonify(content[0][5])
     dic={'content':content}
     return HttpResponse(json.dumps(dic))
 

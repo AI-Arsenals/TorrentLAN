@@ -155,7 +155,7 @@ const FolderView = (props) => {
   }, [currFolder, downloadList,highlightedFolder]);
 
   const backButtonHandler = async () => {
-    
+    console.log(currFolder)
     deselectHighlighted();
     let response, data;
     if (currFolder[3] === null) {
