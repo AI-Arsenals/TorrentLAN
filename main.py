@@ -97,10 +97,10 @@ def uniqueid_is_up(unique_id: str) -> tuple[bool, float]:
 
     Returns:
         bool: True if up else False
-        float: speed in bytes per second if True else 0
+        float: speed in bytes per second if bool==true else 0
     """
 
-    val1, val2 = DOWNLOAD_FILE_CLASS.uniqueid_is_up(unique_id)
+    val1, val2 = DOWNLOAD_FILE_CLASS.up_check(unique_id)
     return val1, val2
 
 
@@ -116,7 +116,7 @@ def childs(unique_id: str, lazy_file_hash: str) -> tuple[list, list]:
         list: list of childs which are files
         list: list of childs which are folders
 
-        If some error occured during transmission or (lazy_file_hash and unique_id) cannot be found then it returns False, False
+        return False,False if some error occured during transmission or (lazy_file_hash and unique_id) cannot be found
     """
 
     files, folders = fetch_childs(unique_id, lazy_file_hash)
@@ -128,6 +128,7 @@ def db_update() -> bool:
     --update db
     -update server with new db
     -do ip registration
+    - no need to handle case of return False as it is not necessary that we must update the server
 
     Returns:
         bool: True if success else False
@@ -140,27 +141,29 @@ def db_update() -> bool:
     return True
 
 
-def rows_at_depth(depth: int, folder_name=None) -> tuple[list, list]:
+def rows_at_depth(depth: int, folder_name=None):
     """
     --Finds rows at particular depth
     - if 'depth'=0 or 'depth'=1 then no need to provide 'folder_name'
     - depth 0 means it returns table names in dbs, eg-Normal_Content_Folder
     - depth 1 means Movies,Music,Games
     - depth > 1 , u need to specify depth accordingly and 'folder_name' show be equal to name of parent of the rows at the depth u want
-
+    
     Arguments:
         depth (int) : depth at while the files u want to see
 
     Returns :
         files (list) : list of tuples and each tuple is same as a row in db, the tuples are of only file
         folders (list) : list of tuples and each tuple is same as a row in db, the tuples are of only folder
+
+        return False,False if any error occured during transmission or other fault
     """
 
     files, folders = fetch_rows_at_depth(depth, folder_name)
     return files, folders
 
 
-def web_downloader(url: str, output_filename=None, output_dir=None):
+def web_downloader(url: str, output_filename=None, output_dir=None)->bool:
     """
     -- downloads files from web using multiple fragments download, it is useful when server hosting the file limits a single download speed
 
@@ -168,9 +171,14 @@ def web_downloader(url: str, output_filename=None, output_dir=None):
         url (str) : url of the file to download
         output_filename (str) : if u want to yourself specify the filename (Default is os.path.basename(url))
         output_dir(str) : if u want to specify download location (Default is data/Web_downloader)
+
+    Returns :
+        bool : True if success else False
     """
 
-    web_download(url, output_filename, output_dir)
+    res=web_download(url, output_filename, output_dir)
+    return res
+
 
 def upload(source_paths: list, dest_dir: str) -> tuple[bool,list]:
     """
@@ -197,7 +205,7 @@ def upload(source_paths: list, dest_dir: str) -> tuple[bool,list]:
     return True,arr
 
 
-def db_seacrh(search_bys: list, searchs: list) -> list:
+def db_search(search_bys: list, searchs: list):
     """
     --Searches with AND filter in db
     - search_bys is list of columns to search in
@@ -205,14 +213,20 @@ def db_seacrh(search_bys: list, searchs: list) -> list:
     - the value in searchs are the mapping to the columns in search_bys
     - current columns that can be searched=[id,name,is_file,parent_id,child_id,metadata,lazy_file_check_hash,unique_id,hash]
     - eg = db_search(["name","unique_id"],["main","041279ea-3370-40a8-a094-e9cbb5a389f2"])
+    
 
     Arguments:
         search_bys (list) : list of columns to search in
         searchs (list) : list of values to search for
 
     Returns :
-        list : list of tuples and each tuple is same as a row in db
+        list : list of tuples and each tuple is same as a row in db [return False if any error occured during transmission]
+
+        return False if any error occured during transmission or other fault
     """
 
     results = search_db(search_bys, searchs)
     return results
+
+if __name__=='__main__':
+    print(web_downloader("https://www.google.com"))

@@ -53,9 +53,9 @@ def search_db(search_bys,searchs):
     except socket.timeout:
         log("Connection timed out", 2)
         log("Server is down", 2)
-        return False,False
+        return False
     except ConnectionRefusedError:
         log("Server is down", 2)
-        return False,False
+        return False
 if __name__ == '__main__':
-    log(search_db(["name","unique_id"],["main","041279ea-3370-40a8-a094-e9cbb5a389f2"]))
+    log(search_db(["name","unique_id"],["main","4e3df847-b2af-49a6-bec3-1784fab047e2"]))

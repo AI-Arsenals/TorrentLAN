@@ -71,7 +71,7 @@ def getFolderList(request):
 def db_search(request):
     query_dict=request.GET
     # print(type(query_dict))
-    content=main.db_seacrh(list(query_dict.keys()),list(query_dict.values()))
+    content=main.db_search(list(query_dict.keys()),list(query_dict.values()))
     content[0][5] = jsonify(content[0][5])
     dic={'content':content}
     return HttpResponse(json.dumps(dic))
