@@ -37,13 +37,16 @@ const FolderView = (props) => {
   const [properties, setProperties] = useState([]);
   const [highlightedFolder,setHighlightedFolder] = useState(null);
 
+  const units = ['B','KB','MB','GB','TB']
+
   const setContentList = (data)=>{
-    data['folders'].forEach((item,index,array)=>{
-      array[index][5]=jsonParser(array[index][5])
-    })
-    data['files'].forEach((item,index,array)=>{
-      array[index][5]=jsonParser(array[index][5])
-    })
+    // data['folders'].forEach((item,index,array)=>{
+    //   array[index][5]=jsonParser(array[index][5])
+      
+    // })
+    // data['files'].forEach((item,index,array)=>{
+    //   array[index][5]=jsonParser(array[index][5])
+    // })
     setContentListPrimitive(data)
   }
 
@@ -165,7 +168,7 @@ const FolderView = (props) => {
         response = await fetch(`api/getFolderListAtDepth?depth=0&folder=none`);
         data = await response.json();
         data = data["folders"][0];
-        data[5] = jsonParser(data[5]);
+        
         setCurrFolder(data);
       }
     } else if (currFolder[5].Path.split("\\").length === 3) {
@@ -178,7 +181,7 @@ const FolderView = (props) => {
       folder = data["folders"].find((item) => {
         return item[1] === folder;
       });
-      folder[5] = jsonParser(folder[5]);
+      
       setCurrFolder(folder);
     } else {
       response = await fetch(`api/db_search?id=${currFolder[3]}`);
@@ -186,18 +189,14 @@ const FolderView = (props) => {
       data = await response.json();
       data = data["content"][0];
       // console.log(data[5])
-      data[5] = jsonParser(data[5]);
+      
 
       setCurrFolder(data);
     }
     console.log(currFolder);
   };
 
-  const jsonParser = (ojson) => {
-    ojson = ojson.replace(/'/g, '"');
-
-    return JSON.parse(ojson);
-  };
+  
 
   return (
     <div className="main-container">
