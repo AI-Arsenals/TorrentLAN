@@ -71,6 +71,8 @@ def live_ip_checker(unique_id, ip):
                         return False
                     one_way_end_time = time.time()
                     time_taken=one_way_end_time-start_time-one_way_ping_time
+                    if time_taken<0:
+                        log(f'ping time {one_way_ping_time}, data_recv_time {one_way_end_time-start_time} , time taken is bad {time_taken}',2)
                     return_data = json.loads(data.decode())
                     if not return_data["check_result"]:
                         log(f"Unique ID {unique_id} is not correct for ip {ip}", 1)
