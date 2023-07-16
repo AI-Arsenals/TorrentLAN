@@ -1125,6 +1125,11 @@ class DOWNLOAD_FILE_CLASS:
         unique_ids=[unique_id]
         CACHE_ID_TO_IP={}
         unique_id_to_ips=get_ips_and_netmasks(unique_ids)
+        if(not unique_id_to_ips[0]):
+            log("Fetching with server failed, unable to get UNIQUE_ID_TO_IPS",2)
+            return False,0
+        else:
+            unique_id_to_ips=unique_id_to_ips[1]
         c_s_server_ip=get_ip_address(C_S_model_SERVER_ADDR)
         local_ip=get_my_connect_ip(c_s_server_ip)
         local_netmask=get_netmask(local_ip)

@@ -138,12 +138,12 @@ def updateDashboard_cache(request):
 def unique_id_is_up(request):
     unique_id = request.GET.get('unique_id',None)
     content = main.uniqueid_is_up(unique_id)
-
-    content[1] = bytesConversion(content[1] + '/s')
+    print('content',content)
+    new_content = [content[0],bytesConversion(content[1])]
 
     dic={
-        'is_available': content[0],
-        'speed': content[1]
+        'is_available': bool(new_content[0]),
+        'speed': new_content[1]
     }
 
     return HttpResponse(json.dumps(dic))

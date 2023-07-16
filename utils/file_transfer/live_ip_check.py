@@ -22,7 +22,7 @@ def live_ip_checker(unique_id, ip):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(8) 
+            s.settimeout(0.2) 
             log(f"Connecting to {ip}:{PORT} for live ip check")
             s.connect((ip, PORT))
             log(f"Connected")
