@@ -18,7 +18,7 @@ const FolderView = (props) => {
     flex: "40%",
   };
   const defualtFolder = [
-    "default",
+    -3,
     "none",
     0,
     null,
@@ -51,7 +51,7 @@ const FolderView = (props) => {
 
   const getFolderList = async () => {
     let response, data, depth;
-    if (currFolder[0] === "default") {
+    if (currFolder[0] === -3) {
       depth = 0;
     } else if (currFolder[0] < 0) {
       depth = -1 * currFolder[0];
@@ -223,19 +223,21 @@ const FolderView = (props) => {
             </div>
 
             <div className="right-content">
-              {downloadList.length > 0 ? (
+              {((downloadList.length > 0))&& (
                 <div className="downloadButtonContainer">
+
+                  {
+                    (currFolder[0]>0 || currFolder[0]===-2) &&
                   <i
                     className="fa-regular fa-circle-down fa-2xl"
                     onClick={downloadHandler}
                   ></i>
+                  }
                   
                   <i className="fa-regular fa-circle-xmark fa-2xl" onClick={deselectAll}></i>
 
                 </div>
-              ) : (
-                <div></div>
-              )}
+              ) }
             </div>
           </div>
 
