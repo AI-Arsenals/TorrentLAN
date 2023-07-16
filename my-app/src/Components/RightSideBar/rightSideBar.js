@@ -1,37 +1,58 @@
+
+import { useState } from "react";
 import "../RightSideBar/rightSideBarStyles.css";
 
 
 
-const fetchUniqueIdIsUp = async(unique_id)=>{
-    let response,data;
-    response = await fetch(`api/unique_id_is_up?unique_id=${unique_id}`)
-    data = await response.json()
-    console.log(data)
-}
 
 
-const AvailabilityInfo = ({availability})=>{
-  return <div className="availability-info">
-    <div className="is-available">
-      Available: {availability['is_available']}
-    </div>
-    <div className="speed">
-      Speed: {availability['speed']}
-    </div>
-  </div>
-}
 
-const AvailabilityInfoContainer = ({availability,unique_id})=>{
-  if(availability){
-
-    return <div className="availability">
-          <button className="simpleButton" id="availabilityCheckButton" onClick={()=>fetchUniqueIdIsUp(unique_id)}>Check Availability</button>
-          <AvailabilityInfo availability={availability}/>
-    </div>
+const RightSideBar = ({ rightCollapseButtonHandler, folder }) => {
+  
+  let [availability,setAvailability] = useState({
+    'is_available':0,
+    'speed': 'speed'
+  })
+  let properties={}
+  const preprocessProperties = () =>{
+    properties['Name']=folder[1]
+    properties = {...properties,...folder[5]}
+    
   }
-}
+  preprocessProperties()
+  
+  const fetchUniqueIdIsUp = async()=>{
+      let response,data;
+      response = await fetch(`api/unique_id_is_up?unique_id=${folder[7]}`)
+      data = await response.json()
+      console.log(data)
+  }
+  
+  
+  const AvailabilityInfo = ()=>{
+    
 
-const RightSideBar = ({ rightCollapseButtonHandler, properties }) => {
+      return <div className="availability-info">
+      <div className="is-available">
+        Available: {availability['is_available']}
+      </div>
+      <div className="speed">
+        Speed: {availability['speed']}
+      </div>
+    </div>
+    
+  }
+  
+  const AvailabilityInfoContainer = ()=>{
+    
+  
+      return <div className="availability">
+            <button className="simpleButton" id="availabilityCheckButton" onClick={()=>fetchUniqueIdIsUp()}>Check Availability</button>
+            {(availability!==null) && <AvailabilityInfo/>}
+      </div>
+    
+  }
+  
   return (
     <div className="rightSideBarWrapper">
       <div className="header">
@@ -62,7 +83,8 @@ const RightSideBar = ({ rightCollapseButtonHandler, properties }) => {
           })}
         </ul>
 
-        <AvailabilityInfoContainer availability={properties['availability']} unique_id={properties['unique_id']}/>
+        
+        {(folder[0]>0) && <AvailabilityInfoContainer/>}
       </div>
     </div>
   );

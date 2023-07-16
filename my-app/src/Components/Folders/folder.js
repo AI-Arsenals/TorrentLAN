@@ -34,7 +34,8 @@ const FolderView = (props) => {
 
   const [downloadList, setDownloadList] = useState([]);
   const [currFolder, setCurrFolder] = useState(defualtFolder);
-  const [properties, setProperties] = useState([]);
+  const [propertiesFolder, setPropertiesFolder] = useState([]);
+  
   const [highlightedFolder,setHighlightedFolder] = useState(null);
 
  
@@ -143,7 +144,7 @@ const FolderView = (props) => {
   }, [currFolder]);
 
   useEffect(() => {
-    let temp_properties={};
+    
     let tempFolder;
     if (downloadList.length === 0 && highlightedFolder===null) {
       tempFolder=currFolder
@@ -157,18 +158,10 @@ const FolderView = (props) => {
       
     }
     
-    temp_properties['Name']=tempFolder[1]
-    temp_properties['unique_id']=tempFolder[7]
-    let availability=null
-    if(0<=tempFolder[0]){
-      temp_properties['availability'] = {
-        'is_available':null,
-        'speed':null
-      }
-    }
-    temp_properties={...temp_properties,...tempFolder[5]};
     
-    setProperties(temp_properties)
+    
+    setPropertiesFolder(tempFolder)
+    
   }, [currFolder, downloadList,highlightedFolder]);
 
   const backButtonHandler = async () => {
@@ -276,7 +269,7 @@ const FolderView = (props) => {
           rightCollapseButtonHandler={async () =>
             setRightIsClosed((prev) => !prev)
           }
-          properties={properties}
+          folder={propertiesFolder}
         />
       </div>
     </div>
