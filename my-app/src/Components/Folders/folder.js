@@ -158,6 +158,7 @@ const FolderView = (props) => {
     }
     
     temp_properties['Name']=tempFolder[1]
+    temp_properties['unique_id']=tempFolder[7]
     let availability=null
     if(0<=tempFolder[0]){
       temp_properties['availability'] = {
