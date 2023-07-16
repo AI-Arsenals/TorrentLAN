@@ -139,7 +139,7 @@ def unique_id_is_up(request):
     unique_id = request.GET.get('unique_id',None)
     content = main.uniqueid_is_up(unique_id)
     print('content',content)
-    new_content = [content[0],bytesConversion(content[1])]
+    new_content = [content[0],(bytesConversion(content[1])+'/s')]
 
     dic={
         'is_available': bool(new_content[0]),

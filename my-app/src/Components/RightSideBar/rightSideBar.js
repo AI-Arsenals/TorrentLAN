@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "../RightSideBar/rightSideBarStyles.css";
 
 
@@ -9,24 +9,27 @@ import "../RightSideBar/rightSideBarStyles.css";
 
 const RightSideBar = ({ rightCollapseButtonHandler, folder }) => {
   
-  let [availability,setAvailability] = useState({
-    'is_available':0,
-    'speed': 'speed'
-  })
+  let [availability,setAvailability] = useState(null)
   let properties={}
   const preprocessProperties = () =>{
+    
     properties['Name']=folder[1]
     properties = {...properties,...folder[5]}
     
   }
   preprocessProperties()
   
+  
   const fetchUniqueIdIsUp = async()=>{
       let response,data;
       response = await fetch(`api/unique_id_is_up?unique_id=${folder[7]}`)
       data = await response.json()
-      console.log(data)
+      setAvailability(data)
   }
+
+  useEffect(()=>{
+    setAvailability(null)
+  },[folder])
   
   
   const AvailabilityInfo = ()=>{
@@ -34,7 +37,7 @@ const RightSideBar = ({ rightCollapseButtonHandler, folder }) => {
 
       return <div className="availability-info">
       <div className="is-available">
-        Available: {availability['is_available']}
+        {availability['is_available']? 'Available':'Not Available'}
       </div>
       <div className="speed">
         Speed: {availability['speed']}
@@ -47,7 +50,7 @@ const RightSideBar = ({ rightCollapseButtonHandler, folder }) => {
     
   
       return <div className="availability">
-            <button className="simpleButton" id="availabilityCheckButton" onClick={()=>fetchUniqueIdIsUp()}>Check Availability</button>
+            <button className="simpleButton" id="availabilityCheckButton" onClick={()=>fetchUniqueIdIsUp()}>Current Availability</button>
             {(availability!==null) && <AvailabilityInfo/>}
       </div>
     
