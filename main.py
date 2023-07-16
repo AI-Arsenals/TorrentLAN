@@ -8,6 +8,9 @@ from utils.file_transfer.main import DOWNLOAD_FILE_CLASS
 from utils.db_manage.db_create import main as db_create_main
 from utils.db_manage.symlink_maker import create_symlink
 from utils.log.main import log
+from utils.dashboard_db.main import fetch_all_entries
+from utils.django_utils.dashboard_cache import cache_fetch
+from utils.django_utils.dashboard_cache import cache_update
 
 
 module_path = "utils/tracker/client(c-s).py"
@@ -100,9 +103,12 @@ def uniqueid_is_up(unique_id: str) -> tuple[bool, float]:
         float: speed in bytes per second if bool==true else 0
     """
 
-    
-    val1, val2 = DOWNLOAD_FILE_CLASS.up_check(unique_id)
-    return val1, val2
+    try:
+        val1, val2 = DOWNLOAD_FILE_CLASS.up_check(unique_id)
+        return val1, val2
+    except Exception as e:
+        log(f"Error in uniqueid_is_up : {e}")
+        return False, 0
 
 
 def childs(unique_id: str, lazy_file_hash: str) -> tuple[list, list]:
@@ -228,6 +234,32 @@ def db_search(search_bys: list, searchs: list):
 
     results = search_db(search_bys, searchs)
     return results
+
+class dashboard_fxns():
+    def cache_fetcher():
+        """
+        --fetches cache data
+        - returns the cache data
+        - return False if cache is not initialized yet
+        """
+        return cache_fetch()
+    
+    def cache_updater(cache_data):
+        """
+        --updates cache data
+        """
+        return cache_update(cache_data)
+    
+    def fetch_dashboard_db():
+        """
+        --fetches dashboard db
+        - returns the dashboard db
+        - the format of dashboard db can be checked at utils.dashboard_db.main
+        - for download the format eg- {update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,0,TOTAL_SIZE,file_loc__api)}
+        - for url download the format eg- {update_dashboard_db('Download',output_filename,'Web',lazy_file_hash.hexdigest(),'Web',0,file_size,str(os.path.realpath(output_filedir)))}
+
+        """
+        return fetch_all_entries()
 
 if __name__=='__main__':
     print(web_downloader("https://www.google.com"))
