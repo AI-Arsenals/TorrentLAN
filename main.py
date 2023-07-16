@@ -100,6 +100,7 @@ def uniqueid_is_up(unique_id: str) -> tuple[bool, float]:
         float: speed in bytes per second if bool==true else 0
     """
 
+    
     val1, val2 = DOWNLOAD_FILE_CLASS.up_check(unique_id)
     return val1, val2
 

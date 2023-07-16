@@ -13,6 +13,22 @@ from utils.dashboard_db.main import fetch_all_entries
 def jsonify(s):
     return json.loads(s.replace("'",'"'))
 
+
+def bytesConversion(size):
+    units = ['B','KB','MB','GB','TB']
+
+    unit = 0
+    while(1024<=size):
+        size/=1024
+        unit+=1
+    
+    size = round(size,2)
+
+    out = str(size) + units[unit]
+    return out
+
+
+
 def preprocess(content):
 
     units = ['B','KB','MB','GB','TB']
@@ -21,14 +37,7 @@ def preprocess(content):
         for i in range(len(l)):
             l[i][5] = jsonify(l[i][5])
             size = float(l[i][5]['Size'])
-            unit = 0
-            while(1024<=size):
-                size/=1024
-                unit+=1
-            
-            size = round(size,2)
-
-            l[i][5]['Size'] = str(size) + units[unit]
+            l[i][5]['Size'] = bytesConversion(size)
     
     return content
 
@@ -37,6 +46,12 @@ def preprocess(content):
 
 @api_view(['GET'])
 def getFolderListAtDepth(request):
+
+    dic={
+        "Status": 200,
+        'files':[],
+        'folders':[]
+    }
     depth=request.GET.get('depth',None)
     folder=request.GET.get('folder',None)
     if(folder=='none'):
@@ -46,8 +61,10 @@ def getFolderListAtDepth(request):
     
     
     content=main.rows_at_depth(depth=int(depth),folder_name=folder)
+    if(content[0]==False or content[1]==False):
+        dic["Status"] = 404
+        return HttpResponse(json.dumps(dic))
     content=preprocess(content)
-    dic={}
     dic['files']=content[0]
     dic['folders']=content[1]
     return HttpResponse(json.dumps(dic))
@@ -56,16 +73,21 @@ def getFolderListAtDepth(request):
 @api_view(['GET'])
 def getFolderList(request):
     
+    dic={
+        'Status': 200,
+        'files': [],
+        'folders': []
+    }
     unique_id=request.GET.get('unique_id',None)
     lazy_file_hash=request.GET.get('lazy_file_hash',None)
     content = main.childs(unique_id=unique_id,lazy_file_hash=lazy_file_hash)
-
+    if(content[0]==False or content[1]==False):
+        dic["Status"] = 404
+        return HttpResponse(json.dumps(dic))
     content = preprocess(content)
     
-    dic={
-        'files': content[0],
-        'folders': content[1]
-    }
+    dic['files'] = content[0]
+    dic['folders']=content[1]
     return HttpResponse(json.dumps(dic))
 
 
@@ -82,16 +104,22 @@ def db_search(request):
 @api_view(['POST'])
 def upload(request):
    
+    dic={
+
+         "Status": 201, #all symlink created successfully
+        'successful_uploads':[]
+
+    }
     data=json.loads(request.body.decode())
-    print(data['source_path'])
-    for index,item in  enumerate(data['dest_path']):
-        data['dest_path'][index] = os.path.realpath(item)
+    
+    content = main.upload(data['source_path'],os.path.realpath('./data/Normal/'+data['dest_path']))
+    if(content[0]):
+        dic['Status']=500
 
-    print(data['dest_path'])
-    # main.upload(os.path.realpath(data['source_path']),os.path.realpath('./data/Normal/'+data['dest_path']))
-    return HttpResponse('uploading file')
+    dic['successful_uploads'] = content[1]
+    return HttpResponse(json.dumps(dic))
 
-
+    
 @api_view(['GET'])
 def getDashboard(request):
     data=fetch_all_entries()
@@ -105,5 +133,19 @@ def getDashboard_cache():
 def updateDashboard_cache(request):
     dashboard_cache.cache_update(request.body.decode())
     return HttpResponse('updated')
-    
 
+
+
+@api_view(['GET'])
+def unique_id_is_up(request):
+    unique_id = request.GET.get('unique_id',None)
+    content = main.uniqueid_is_up(unique_id)
+
+    content[1] = bytesConversion(content[1] + '/s')
+
+    dic={
+        'is_available': content[0],
+        'speed': content[1]
+    }
+
+    return HttpResponse(json.dumps(dic))

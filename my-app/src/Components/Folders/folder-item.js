@@ -17,14 +17,14 @@ const FolderItem = (props) => {
 
   const handleLeftClick = async (event) =>{
     await props.handleClick()
-    if(props.type==="folder"){
+    
 
-      if(!event.target.classList.contains("highlighted")){
-        event.target.classList.add("highlighted")
-      }
+    if(!event.target.classList.contains("highlighted")){
+      event.target.classList.add("highlighted")
+    }
   
       
-    }
+    
   } 
 
   

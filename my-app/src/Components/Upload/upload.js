@@ -44,20 +44,22 @@ const Upload = (props) => {
       console.log("Devloper (please remove this alert)(as os is not windows so no need to click on allow)", {});
     }
 
-    path.forEach(async p => {
 
-      data = { source_path: p, dest_path: destFolder["value"] };
-      data = JSON.stringify(data);
-      await fetch("api/upload", {
-        method: "POST",
-        data: data,
-        body: data,
-        headers: {
-          "Content-type": "application/json; charset=UTF-8",
-        },
-      });
+    
 
-    })
+      data = { source_path: path, dest_path: destFolder["value"] };
+    data = JSON.stringify(data);
+    await fetch("api/upload", {
+      method: "POST",
+      data: data,
+      body: data,
+      headers: {
+        "Content-type": "application/json; charset=UTF-8",
+      },
+    });
+
+    
+  
 
     setPath([]);
   };
@@ -103,7 +105,7 @@ const Upload = (props) => {
       </div>
 
       <button
-        id="uploadButton"
+        className="simpleButton"
         onClick={uploadButtonHandler}
         disabled={!uploadButtonVisible}
       >
