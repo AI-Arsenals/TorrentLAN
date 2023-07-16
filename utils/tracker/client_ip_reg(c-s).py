@@ -107,4 +107,4 @@ def get_netmask(ip_address):
     return None
 
 if __name__ == '__main__':
-    update()
+    update(Force_update=True)

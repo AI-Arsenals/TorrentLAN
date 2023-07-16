@@ -4,11 +4,9 @@ from rest_framework.decorators import api_view
 import sys
 import os
 import json
-# Create your views here.
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 import main
-import utils.django_utils.dashboard_cache as dashboard_cache
-from utils.dashboard_db.main import fetch_all_entries
 
 def jsonify(s):
     return json.loads(s.replace("'",'"'))
@@ -122,16 +120,16 @@ def upload(request):
     
 @api_view(['GET'])
 def getDashboard(request):
-    data=fetch_all_entries()
+    data=main.dashboard_fxns.fetch_dashboard_db()
     return HttpResponse(data)
 
 @api_view(['GET'])
 def getDashboard_cache():
-    return HttpResponse(dashboard_cache.cache_fetch())
+    return HttpResponse(main.dashboard_fxns.cache_fetcher())
 
 @api_view(['POST'])
 def updateDashboard_cache(request):
-    dashboard_cache.cache_update(request.body.decode())
+    main.dashboard_fxns.cache_updater(request.body.decode())
     return HttpResponse('updated')
 
 
