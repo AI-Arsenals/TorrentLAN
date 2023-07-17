@@ -9,8 +9,9 @@ from utils.db_manage.db_create import main as db_create_main
 from utils.db_manage.symlink_maker import create_symlink
 from utils.log.main import log
 from utils.dashboard_db.main import fetch_all_entries
-from utils.django_utils.dashboard_cache import cache_fetch
-from utils.django_utils.dashboard_cache import cache_update
+from utils.django_utils.dashboard_cache import cache_fetch,cache_update
+from utils.remover.log import fetch_logs_size,delete_logs
+
 
 
 module_path = "utils/tracker/client(c-s).py"
@@ -260,6 +261,22 @@ class dashboard_fxns():
 
         """
         return fetch_all_entries()
+
+class remover():
+    def log_size_fetcher()->int:
+        """
+        --fetches logs size
+
+        Returns:
+            bool : the logs size in bytes
+        """
+        return fetch_logs_size()
+    
+    def log_remover():
+        """
+        --removes logs
+        """
+        return delete_logs()
 
 if __name__=='__main__':
     print(web_downloader("https://www.google.com"))
