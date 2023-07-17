@@ -39,27 +39,21 @@ def db_search(search_bys, searchs):
             cursor = conn.cursor()
 
             for table_name in data:
-                exact_searchs = ["id","is_file","parent_id","child_id","lazy_file_check_hash","unique_id","hash"]
-                query = '''
-                    SELECT * FROM {table_name} WHERE {conditions};'''
+                exact_searchs = ["id", "is_file", "parent_id", "child_id", "lazy_file_check_hash", "unique_id", "hash"]
+                rest_col = ["name","metadata"]
 
-                conds=[]
+                conds = []
+                bind_param = []
                 for i in range(len(search_bys)):
-                    if(search_bys[i] in exact_searchs):
-                        conds.append('{} = ?'.format(search_bys[i]))
-                    else:
-                        conds.append('{} LIKE ?'.format(search_bys[i]))
+                    if search_bys[i] in exact_searchs:
+                        conds.append("{} = ?".format(search_bys[i]))
+                        bind_param.append(searchs[i])
+                    elif search_bys[i] in rest_col:
+                        conds.append("{} LIKE ?".format(search_bys[i]))
+                        bind_param.append('%' + searchs[i] + '%')
 
-                query=query.format(table_name=table_name,conditions=" AND ".join(conds))
-
-                cur_exec =[]
-                for i in range(len(search_bys)):
-                    if(search_bys[i] in exact_searchs):
-                        cur_exec.append(searchs[i])
-                    else:
-                        cur_exec.append('%' + searchs[i] + '%')
-
-                cursor.execute(query, cur_exec)
+                query = f"SELECT * FROM {table_name} WHERE " + ' AND '.join(conds)
+                cursor.execute(query, tuple(bind_param))
                 results = cursor.fetchall()
                 RESULTS.extend(results)
 

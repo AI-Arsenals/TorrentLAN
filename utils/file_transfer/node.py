@@ -8,6 +8,7 @@ import sqlite3
 import sys
 import select
 import psutil
+from sqlalchemy import text as sanitize
 
 
 sys.path.append(os.path.abspath(os.path.join(
@@ -89,12 +90,18 @@ def handle_client(conn, addr):
             if hash in HASH_TO_FILE_DIR_CACHE:
                 hash_in_cache=True
             if not hash_in_cache:
-                # Find file path in file_tree.db
                 with open(CONFIG_FOLDER_LOCATION) as f:
-                    data = json.load(f)
+                    table_names = json.load(f).keys()
+                if table_name not in table_names:
+                    log(f"Table name {table_name} not found in folder_locations.json",severity_no=1,file_name=NODE_file_transfer_log)
+                    data_to_send = json.dumps(data_to_send).encode()
+                    data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+                    conn.send(data_to_send)
+                    conn.close()
+                    return
                 db_con=sqlite3.connect(os.path.join(DATABASE_DIR,"file_tree.db"))
                 cursor=db_con.cursor()
-                cursor.execute(f"SELECT * FROM {table_name} WHERE hash = '{hash}'")
+                cursor.execute(f"SELECT * FROM {table_name} WHERE hash = '{sanitize(hash)}'")
                 data=cursor.fetchone()
                 is_file=data[2]
                 if data and is_file:
