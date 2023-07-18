@@ -42,7 +42,8 @@ module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 subdb_downloader=getattr(module, "subdb_downloader")
 
-NODE_PORT=8890
+NODE_CONFIG='configs/node.json'
+NODE_PORT = json.load(open(NODE_CONFIG))["port"]
 
 C_S_model_SERVER_CONFIG="configs/server.json"
 C_S_model_SERVER_ADDR=json.load(open(C_S_model_SERVER_CONFIG))["server_addr"]
@@ -1172,5 +1173,5 @@ class DOWNLOAD_FILE_CLASS:
         
 if __name__ == '__main__':
     # DOWNLOAD_FILE_CLASS.main("dae9a489-a077-4bba-82de-3f0e6cde0288","79abf0609459c5bf1e6dcb5d124d16e5",table_name="Normal_Content_Main_Folder")
-     DOWNLOAD_FILE_CLASS.main("a7561257-324c-4186-91ec-45b5e766753f","e4a3871c86f6042767abebff3c1623f3",table_name="Normal_Content_Main_Folder")
+     DOWNLOAD_FILE_CLASS.main("451d55b4-2d4f-4c64-9f26-a594a38c5acf","fc9fd87d40ff41dd92d357dc66648817",table_name="Normal_Content_Main_Folder")
   

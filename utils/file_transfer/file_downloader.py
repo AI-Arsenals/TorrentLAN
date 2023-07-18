@@ -6,7 +6,8 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 from utils.log.main import log
 
-PORT = 8890
+NODE_CONFIG='configs/node.json'
+PORT = json.load(open(NODE_CONFIG))["port"]
 
 def file_download(ip, hash,table_name,start_byte=None,end_byte=None):
     try:
