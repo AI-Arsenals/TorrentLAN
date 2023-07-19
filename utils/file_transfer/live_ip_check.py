@@ -14,7 +14,8 @@ from utils.log.main import log
 LIVE_IP_CHECK_CONFIG= "configs/live_ip_check_config.json"
 SPEED_TEST_DATA_SIZE = json.load(open(LIVE_IP_CHECK_CONFIG))["speed_test_data_size"]
 
-PORT = 8890
+NODE_CONFIG='configs/node.json'
+PORT = json.load(open(NODE_CONFIG))["port"]
 
 import socket
 

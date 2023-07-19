@@ -22,7 +22,8 @@ FILE_TRANSFER_NODE_CONFIG ="configs/file_transfer_node_config.json"
 
 
 HOST = get_intranet_ips()
-PORT = 8890
+NODE_CONFIG='configs/node.json'
+PORT = json.load(open(NODE_CONFIG))["port"]
 
 DATABASE_DIR = "data/.db"
 NODE_file_transfer_log=".node_file_transfer_log"

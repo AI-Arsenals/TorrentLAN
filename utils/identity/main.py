@@ -8,7 +8,16 @@ from utils.log.main import log
 
 CONFIG="configs/identity.json"
 
+def create_data_folders():
+    folders=["Games", "Movies", "Music", "Pictures", "Documents","College","Others"]
+    for folder in folders:
+        if not os.path.exists(os.path.join("data","Normal", folder)):
+            os.makedirs(os.path.join("data","Normal", folder))
+            log(f"Created folder {folder} in data")
+
+
 def generate_client_id():
+    create_data_folders()
     if not os.path.exists(CONFIG):
         with open(CONFIG, 'w') as f:
             json.dump({}, f)

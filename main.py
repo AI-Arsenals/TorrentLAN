@@ -68,7 +68,7 @@ def set_username(user_name: str) -> bool:
     return value
 
 
-def download(unique_id: str, lazy_file_hash: str, table_name: str = "Normal_Content_Main_Folder") -> bool:
+def download(unique_id: str, lazy_file_hash: str, table_name: str,name__api:str,file_loc__api:str,api_loc=None) -> bool:
     """
     --file transfer download
     -setup db and ips
@@ -88,7 +88,7 @@ def download(unique_id: str, lazy_file_hash: str, table_name: str = "Normal_Cont
     """
 
     value = DOWNLOAD_FILE_CLASS.main(
-        unique_id, lazy_file_hash, table_name, api_func)
+        unique_id, lazy_file_hash, table_name,name__api,file_loc__api,api_loc)
     return value
 
 
@@ -171,7 +171,7 @@ def rows_at_depth(depth: int, folder_name=None):
     return files, folders
 
 
-def web_downloader(url: str, output_filename=None, output_dir=None)->bool:
+def web_downloader(url: str, output_filename=None, output_dir=None,api_loc=None)->bool:
     """
     -- downloads files from web using multiple fragments download, it is useful when server hosting the file limits a single download speed
 
@@ -184,7 +184,7 @@ def web_downloader(url: str, output_filename=None, output_dir=None)->bool:
         bool : True if success else False
     """
 
-    res=web_download(url, output_filename, output_dir)
+    res=web_download(url, output_filename, output_dir,api_loc)
     return res
 
 
@@ -279,4 +279,4 @@ class remover():
         return delete_logs()
 
 if __name__=='__main__':
-    print(web_downloader("https://www.google.com"))
+    download("b43b6944-f193-4f19-8010-6c22dacbf4c9","7453adedd3a1c5dded3b51ff7aaf085a",table_name="Normal_Content_Main_Folder",name__api="test_name",file_loc__api="data/Normal/Games")
