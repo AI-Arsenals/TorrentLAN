@@ -6,6 +6,7 @@ import threading
 import heapq
 import time
 import base64
+import requests
 import queue
 from termcolor import colored
 import importlib.util as import_util
@@ -238,6 +239,10 @@ class DOWNLOAD_FILE_CLASS:
         start_time=time.time()
         if not os.path.exists(TMP_DOWNLOAD_DIR):
             os.makedirs(TMP_DOWNLOAD_DIR)
+
+        API_LOC_DEFINED=False
+        if api_loc:
+            API_LOC_DEFINED=True
         global MAX_CONCURRENT_DOWNLOAD_TO_SINGLE_IP
         global BREAK_DOWNLOAD_WHEN_SIZE_EXCEED
         global IP_LOCK_TAKEN_BY_BIG_FILE_DOWNLOAD
@@ -364,6 +369,15 @@ class DOWNLOAD_FILE_CLASS:
             log(f"Found {len(low_speed_priority_queue)} low speed ips")
         LEN_high_speed_priority_queue=len(high_speed_priority_queue)
 
+        def report_progress_at_api(percentage):
+            if API_LOC_DEFINED:
+                nonlocal lazy_file_hash__api
+                nonlocal api_loc
+                data={lazy_file_hash__api:percentage}
+                try:
+                    requests.get(api_loc, params=data,timeout=0.01)            
+                except:
+                    pass
 
         def report_progress():
             downloaded = LOCKS.access_DOWNLOADED_SIZE(None,None,fetch=True)
@@ -371,11 +385,8 @@ class DOWNLOAD_FILE_CLASS:
             progress_percent = int(progress * 100)
             total_bar_length = int(progress*25)
 
-            # nonlocal api_loc
-            # if api_loc:
-            #     nonlocal lazy_file_hash__api
-            #     send percentage at api_loc
-
+            threading.Thread(target=report_progress_at_api,args=(progress_percent,)).start()
+                
             bar = ('#' * (total_bar_length) + '-' * ((25 - total_bar_length)))
 
             bar_color = 'green' if progress_percent >= 50 else 'yellow'
@@ -949,6 +960,12 @@ class DOWNLOAD_FILE_CLASS:
         SEG_DONE_CNT_lock=threading.Lock()
         log("Starting download.........................")
         update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,0,TOTAL_SIZE,file_loc__api)
+        if API_LOC_DEFINED:
+                data={lazy_file_hash__api:0}
+                try:
+                    requests.get(api_loc, params=data,timeout=0.2)            
+                except:
+                    pass
         # high speed downloads
         threads=[]
         if len(big_file_info):
@@ -993,8 +1010,7 @@ class DOWNLOAD_FILE_CLASS:
             log(f"Please rerun the download again or we can automatically shedule the download for you",2)
             log(f"Failed download can also mean that the node has deleted the file and not updated the server yet",1)
             update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,LOCKS.access_DOWNLOADED_SIZE(None,None,fetch=True),TOTAL_SIZE,file_loc__api)
-            # if api_loc:
-            #     send 0 percentage at api_loc
+            report_progress()
             return False
         elif not(RETRY_DOWNLOADS.empty()):
             file_paths=[]
@@ -1006,8 +1022,7 @@ class DOWNLOAD_FILE_CLASS:
             log(f"Total time taken {time.time()-start_time} seconds",0) 
             log(f"Failed download can also mean that the node has deleted the file and not updated the server yet",1)
             update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,LOCKS.access_DOWNLOADED_SIZE(None,None,fetch=True),TOTAL_SIZE,file_loc__api)
-            # if api_loc:
-            #  send percentage at api_loc
+            report_progress()
             return False
         else:
             bar = ('#' * (25) + '-' * ((25 - 25)))
@@ -1018,8 +1033,12 @@ class DOWNLOAD_FILE_CLASS:
             log(f"Downloaded {file_paths}",0)
             log(f"Total time taken {time.time()-start_time} seconds",0)
             update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,100,TOTAL_SIZE,file_loc__api)
-            # if api_loc:
-            #  send 100 percentage at api_loc
+            if API_LOC_DEFINED:
+                data={lazy_file_hash__api:100}
+                try:
+                    requests.get(api_loc, params=data,timeout=0.2)            
+                except:
+                    pass
             
             # remove .tmp_download files
             tmp_downloads=[]
@@ -1148,7 +1167,13 @@ class DOWNLOAD_FILE_CLASS:
         Main function
         """
 
-        update_dashboard_db('Download',name__api,unique_id,lazy_file_hash,table_name,0,0,file_loc__api)
+        update_dashboard_db('Download',name__api,unique_id,lazy_file_hash,table_name,0,-1,file_loc__api)
+        if api_loc is not None:
+            data={lazy_file_hash:0}
+            try:
+                requests.get(api_loc, params=data,timeout=0.2)            
+            except:
+                pass
 
         # Download subdb
         result=subdb_downloader(unique_id,lazy_file_hash)

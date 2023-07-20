@@ -1,10 +1,10 @@
 import sys
-import requests
 import os
 import shutil
 import threading
 import time
 import datetime
+import requests
 from termcolor import colored
 from hashlib import md5
 
@@ -22,6 +22,10 @@ WEB_DOWNLOAD_DIR = "data/Web_downloader"
 DOWNLOADED_SIZE=0
 
 def download_segment(url, start_byte, end_byte, file, TOTAL_SIZE, FILE_SIZE_SHOW,digest,api_loc=None):
+    API_LOC_DEFINED=False
+    if api_loc:
+        API_LOC_DEFINED=True
+
     start_time = time.time()
     headers = {'Range': f'bytes={start_byte}-{end_byte}'}
     response = requests.get(url, headers=headers, stream=True)
@@ -38,20 +42,23 @@ def download_segment(url, start_byte, end_byte, file, TOTAL_SIZE, FILE_SIZE_SHOW
         DOWNLOADED_SIZE+=inc_val
         DOWNLOADED_SIZE_lock.release()
 
+    def report_progress_at_api(percentage):
+        if API_LOC_DEFINED:
+            nonlocal digest
+            nonlocal api_loc
+
+            data={digest:percentage}
+            try:
+                requests.get(api_loc, params=data,timeout=0.01)            
+            except:
+                pass
+
     def report_progress():
         downloaded = access_downloaded_size(None, True)
         progress = downloaded / TOTAL_SIZE
         progress_percent = int(progress * 100)
         
-        # send percentage at api_loc
-        # nonlocal api_loc
-        # if api_loc:
-        #     nonlocal digest
-        #     try:
-        #         send with id=digest
-        #         requests.get(api_loc, params={'progress': progress_percent})
-        #     except:
-        #         pass
+        threading.Thread(target=report_progress_at_api,args=(progress_percent,)).start()
 
         total_bar_length = int(progress*25)
 
@@ -137,6 +144,9 @@ def merge_files(file_segments, output_filepath):
 
 def main(url,output_filename=None,output_dir=None,api_loc=None):
     try:
+        API_LOC_DEFINED=False
+        if api_loc:
+            API_LOC_DEFINED=True
         num_segments = 5  # Number of segments to split the file into
         log(f"Downloading with {num_segments} threads ...")
         if not output_filename:
@@ -169,6 +179,13 @@ def main(url,output_filename=None,output_dir=None,api_loc=None):
         lazy_file_hash = md5()
         lazy_file_hash.update(str(url).encode()+str(output_filename).encode()+str(output_dir).encode())
         digest=lazy_file_hash.hexdigest()
+
+        try:
+            if API_LOC_DEFINED:
+                data={digest:0}
+                requests.get(api_loc, params=data,timeout=0.2)
+        except:
+            pass
         update_dashboard_db('Download',output_filename,'Web',digest,'Web',0,-1,os.path.realpath(output_filedir))
 
         file_segments = download_file(url, num_segments,output_filename,digest,output_filedir,api_loc)
@@ -184,10 +201,14 @@ def main(url,output_filename=None,output_dir=None,api_loc=None):
 
         log(f"File '{output_filename}' downloaded at {destination}")
         file_size=os.stat(output_filedir).st_size
-
-        # if api_loc:
-        #  send 100 percentage at api_loc
         
+        try:
+            if API_LOC_DEFINED:
+                data={digest:100}
+                requests.get(api_loc, params=data,timeout=0.2)
+        except:
+            pass
+
         update_dashboard_db('Download',output_filename,'Web',lazy_file_hash.hexdigest(),'Web',100,file_size,str(os.path.realpath(output_filedir)))
         return True
     except Exception as e:
@@ -197,7 +218,7 @@ def main(url,output_filename=None,output_dir=None,api_loc=None):
 
 if __name__ == '__main__':
     url = 'https://github.com/AI-Arsenals/TorrentLAN/archive/refs/heads/main.zip'
-    main(url,output_filename='TorrentLAN')
+    main(url,output_filename='TorrentLAN',api_loc="http://127.0.0.1:8000/recv_down")
 
     # url='https://gitlab.com/kalilinux/packages/wordlists/-/raw/kali/master/rockyou.txt.gz'
     # main(url,output_dir=os.path.join(os.getcwd(),"data","Web_downloader"))

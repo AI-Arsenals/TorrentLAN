@@ -68,7 +68,7 @@ def set_username(user_name: str) -> bool:
     return value
 
 
-def download(unique_id: str, lazy_file_hash: str, table_name: str,name__api:str,file_loc__api:str,api_loc=None) -> bool:
+def download(unique_id: str, lazy_file_hash: str, table_name: str,name__api:str,file_loc__api:str,api_loc=None) -> tuple[str,bool]:
     """
     --file transfer download
     -setup db and ips
@@ -78,9 +78,14 @@ def download(unique_id: str, lazy_file_hash: str, table_name: str,name__api:str,
         unique_id (str): Unique ID of file
         lazy_file_hash (str): Lazy File Hash of file
         table_name (str): Table Name of file (Currently let it be "Normal_Content_Main_Folder")
-
+        name__api (str): Name of the file (same as the name column in db)    
+        file_loc__api (str): Location of the file (same as the file_loc in metadata column in db)
+        api_loc (str): Url of the api where backend will do a GET request to update download progress (the data will be sent like - Eg-"http://localhost:8000/recv_download?afeaf3fwaf=50" where api_loc="http://localhost:8000/recv_download")
+        -- when percentage is sent at api_loc please do max(current_percentage,percentage_received) also do min(recieved_percentage,100)
+        
     Returns:
         bool: True if success else False if partial or full download failure
+        lazy_file_hash: return lazy_file_hash provided as arguments in function
     """
 
     """Frontend api where i will send 
@@ -89,7 +94,7 @@ def download(unique_id: str, lazy_file_hash: str, table_name: str,name__api:str,
 
     value = DOWNLOAD_FILE_CLASS.main(
         unique_id, lazy_file_hash, table_name,name__api,file_loc__api,api_loc)
-    return value
+    return value,lazy_file_hash
 
 
 def uniqueid_is_up(unique_id: str) -> tuple[bool, float]:
@@ -171,7 +176,7 @@ def rows_at_depth(depth: int, folder_name=None):
     return files, folders
 
 
-def web_downloader(url: str, output_filename=None, output_dir=None,api_loc=None)->bool:
+def web_downloader(url: str, output_filename=None, output_dir=None,api_loc=None)->tuple[bool,str]:
     """
     -- downloads files from web using multiple fragments download, it is useful when server hosting the file limits a single download speed
 
@@ -179,13 +184,15 @@ def web_downloader(url: str, output_filename=None, output_dir=None,api_loc=None)
         url (str) : url of the file to download
         output_filename (str) : if u want to yourself specify the filename (Default is os.path.basename(url))
         output_dir(str) : if u want to specify download location (Default is data/Web_downloader)
-
+        api_loc (str): Url of the api where backend will do a GET request to update download progress (the data will be sent like - Eg-"http://localhost:8000/recv_download?afeaf3fwaf=50" where api_loc="http://localhost:8000/recv_download")
+        -- when percentage is sent at api_loc please do max(current_percentage,percentage_received) also do min(recieved_percentage,100)
     Returns :
         bool : True if success else False
+        url (str): return url as same as provided in arguments
     """
 
     res=web_download(url, output_filename, output_dir,api_loc)
-    return res
+    return res,url
 
 
 def upload(source_paths: list, dest_dir: str) -> tuple[bool,list]:
@@ -279,4 +286,4 @@ class remover():
         return delete_logs()
 
 if __name__=='__main__':
-    download("b43b6944-f193-4f19-8010-6c22dacbf4c9","7453adedd3a1c5dded3b51ff7aaf085a",table_name="Normal_Content_Main_Folder",name__api="test_name",file_loc__api="data/Normal/Games")
+    download("b43b6944-f193-4f19-8010-6c22dacbf4c9","7453adedd3a1c5dded3b51ff7aaf085a",table_name="Normal_Content_Main_Folder",name__api="test_name",file_loc__api="data/Normal/Games",api_loc="http://127.0.0.1:8000/recv_download")
