@@ -14,7 +14,8 @@ from utils.log.main import log
 LIVE_IP_CHECK_CONFIG= "configs/live_ip_check_config.json"
 SPEED_TEST_DATA_SIZE = json.load(open(LIVE_IP_CHECK_CONFIG))["speed_test_data_size"]
 
-PORT = 8890
+NODE_CONFIG='configs/node.json'
+PORT = json.load(open(NODE_CONFIG))["port"]
 
 import socket
 
@@ -22,7 +23,7 @@ def live_ip_checker(unique_id, ip):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(8) 
+            s.settimeout(0.2) 
             log(f"Connecting to {ip}:{PORT} for live ip check")
             s.connect((ip, PORT))
             log(f"Connected")
@@ -71,6 +72,8 @@ def live_ip_checker(unique_id, ip):
                         return False
                     one_way_end_time = time.time()
                     time_taken=one_way_end_time-start_time-one_way_ping_time
+                    if time_taken<0:
+                        log(f'ping time {one_way_ping_time}, data_recv_time {one_way_end_time-start_time} , time taken is bad {time_taken}',2)
                     return_data = json.loads(data.decode())
                     if not return_data["check_result"]:
                         log(f"Unique ID {unique_id} is not correct for ip {ip}", 1)

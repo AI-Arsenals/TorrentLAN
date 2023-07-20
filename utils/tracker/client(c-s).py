@@ -3,9 +3,16 @@ import os
 import sys
 import json
 import base64
+import importlib.util as import_util
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 from utils.log.main import log
+
+module_path = "utils/tracker/client_ip_reg(c-s).py"
+spec =import_util.spec_from_file_location("", module_path)
+module =import_util.module_from_spec(spec)
+spec.loader.exec_module(module)
+get_ip_address=getattr(module, "get_ip_address")
 
 CONFIG_IDENTITY = "configs/identity.json"
 CONFIG_CLIENT = "configs/client(c-s).json"
@@ -21,6 +28,7 @@ def update_server(unique_id, ip):
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             log(f"Connecting to server at {ip}")
+            s.settimeout(40)
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}
@@ -36,13 +44,10 @@ def update_server(unique_id, ip):
     except ConnectionRefusedError:
         log("Server is down",2)
         return False
-
-def get_ip_address(address):
-    try:
-        ip_address = socket.gethostbyname(address)
-        return ip_address
-    except socket.gaierror:
-        return None
+    except socket.timeout:
+        log("Connection timed out",2)
+        log("Server is down",2)
+        return False
 
 def check_updation(Force_update=False):
     ip = get_ip_address(SERVER_ADDR)
@@ -71,4 +76,4 @@ def check_updation(Force_update=False):
             else:
                 log("Already Upto date")
 if __name__ == '__main__':
-    check_updation(Force_update=True)
+    check_updation()

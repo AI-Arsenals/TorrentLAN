@@ -10,6 +10,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..
 from utils.tracker.shared_util.intranet_ips_grabber import get_intranet_ips
 from utils.db_manage.hash_searcher import hash_list_searcher
 from utils.db_manage.subdb_maker_with_node import subdb_maker
+from utils.db_manage.get_childs import childs
+from utils.db_manage.rows_at_depth import rows_at_depth
+from utils.db_manage.search_db import db_search
 from utils.log.main import log
 
 HOST = get_intranet_ips()
@@ -41,6 +44,9 @@ def handle_client(conn, addr):
     db_update=js_data.get("db_update",False)
     hash_to_id=js_data.get("hash_to_id",False)
     subdb_download=js_data.get("subdb_download",False)
+    fetch_childs=js_data.get("fetch_childs",False)
+    fetch_rows_at_depth=js_data.get("fetch_rows_at_depth",False)
+    search_db=js_data.get("search_db",False)
 
     if ip_get:
         log(f"Querying a IP",file_name=SERVER_LOGS)
@@ -57,7 +63,47 @@ def handle_client(conn, addr):
         conn.sendall(data_to_send)
         log(f"Sending back: {return_js_data}",severity_no=1,file_name=SERVER_LOGS)
         conn.close()
+    
+    elif fetch_childs:
+        log(f"Fetching childs",file_name=SERVER_LOGS)
+        unique_id = js_data['unique_id']
+        lazy_file_hash = js_data['lazy_file_hash']
+        files,folders= childs(unique_id,lazy_file_hash)
+        data_to_send={}
+        data_to_send['files']=files
+        data_to_send['folders']=folders
+        data_to_send=json.dumps(data_to_send).encode()
+        data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+        conn.sendall(data_to_send)
+        log(f"Sending back: {data_to_send}",severity_no=1,file_name=SERVER_LOGS)
+        conn.close()
+        
+    elif search_db:
+        log(f"Searching db",file_name=SERVER_LOGS)
+        search_bys = js_data['search_bys']
+        searchs= js_data['searchs']
+        results=db_search(search_bys,searchs)
+        data_to_send={}
+        data_to_send['results']=results
+        data_to_send=json.dumps(data_to_send).encode()
+        data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+        conn.sendall(data_to_send)
+        log(f"Sending back: {data_to_send}",severity_no=1,file_name=SERVER_LOGS)
+        conn.close()
 
+    elif fetch_rows_at_depth:
+        log(f"Fetching rows at depth",file_name=SERVER_LOGS)
+        depth=js_data["depth"]
+        folder_name=js_data["folder_name"]
+        files,folders=rows_at_depth(depth,folder_name)
+        data_to_send={}
+        data_to_send['files']=files
+        data_to_send['folders']=folders
+        data_to_send=json.dumps(data_to_send).encode()
+        data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+        conn.sendall(data_to_send)
+        log(f"Sending back: {data_to_send}",severity_no=1,file_name=SERVER_LOGS)
+        conn.close()
     elif ip_reg:
         log("IP registration",file_name=SERVER_LOGS)
         unique_id = js_data['unique_id']

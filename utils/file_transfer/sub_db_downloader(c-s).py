@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..
 from utils.log.main import log
 
 module_path = "utils/tracker/client_ip_reg(c-s).py"
-spec =import_util.spec_from_file_location("client_uniqueid_to_ip_fetch_c_s", module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 get_my_connect_ip=getattr(module, "get_my_connect_ip")
@@ -20,7 +20,7 @@ SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 SUB_DB_PATH = "data/.db/sub_db_downloaded"
 
-PORT = json.load(open(SERVER_CONFIG))["server_addr"]
+PORT = json.load(open(SERVER_CONFIG))["server_port"]
 
 def subdb_downloader(unique_id,lazy_file_hash):
     subdb_filename=unique_id + "_" + lazy_file_hash + ".db"
@@ -35,7 +35,7 @@ def subdb_downloader(unique_id,lazy_file_hash):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(60)
+            s.settimeout(30)
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}

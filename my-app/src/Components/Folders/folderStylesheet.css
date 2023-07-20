@@ -1,0 +1,122 @@
+
+.main-container{
+    width: 100%;
+    min-height: 100px;
+    height: 100%;
+    /* border: 1px solid white; */
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    
+}
+
+.viewport{
+    background-color: rgb(77, 75, 75);
+    width: 80%;
+    display: flex;
+    gap: 2em;
+    flex-wrap: wrap;
+    padding-bottom: 30px;
+    height: 400px;
+    overflow-y: scroll;
+    
+    
+}
+
+.folder-item{
+    display: flex;
+    flex-direction: column;
+    /* border: 1px solid white; */
+    align-items: center;
+    margin: 0px 30px;
+}
+
+.folder-icon{
+    height: 60px;
+    width: auto;
+    margin-bottom: 3px;
+   
+    padding: 3px;
+}
+
+.selected{
+    background-color: rgb(145, 145, 236);
+    border: 1px dashed white;
+}
+
+.highlighted{
+    background-color: rgb(145, 145, 236);
+    border: 1px dashed white;
+}
+
+button{
+    background: none;
+	color: inherit;
+	border: none;
+	padding: 0;
+	font: inherit;
+	cursor: pointer;
+	outline: inherit;
+}
+
+.navbar{
+    width: 100%;
+    height: 3.7rem;
+    margin-bottom: 20px;
+    background-color: rgb(39, 38, 38);
+    padding:10px;
+    padding-left: 30px;
+    display: flex;
+    justify-content: space-between;
+    position: sticky;
+    top: 0px;
+}
+
+.dir-text{
+    
+    color: white;
+}
+
+.left-content{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    gap: 1em;
+}
+
+.right-content{
+    padding-right: 20px;
+}
+
+.downloadViewWrapper{
+    display: flex;
+    width: 100%;
+    height: 100%;
+    
+}
+
+.rightSideBar{
+    flex: 20%;
+    min-width: 40px;
+    height: 100%;
+    background-color: rgb(48,50,51);
+    transition: all 1s ease-in-out;
+}
+
+.downloadView{
+    height: 100%;
+    width: 100%;
+    padding-top: 50px;
+    display: flex;
+    justify-content: center;
+    overflow-y: scroll;
+}
+
+.downloadButtonContainer{
+    .fa-regular{
+        margin: 5px;
+    }
+
+    
+}

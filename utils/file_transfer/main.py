@@ -6,6 +6,7 @@ import threading
 import heapq
 import time
 import base64
+import requests
 import queue
 from termcolor import colored
 import importlib.util as import_util
@@ -14,15 +15,16 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..
 from utils.log.main import log
 from utils.file_transfer.live_ip_check import live_ip_checker
 from utils.file_transfer.file_downloader import file_download
+from utils.dashboard_db.main import update_dashboard_db
 
 module_path = "utils/tracker/shared_util/client_uniqueid_to_ip_fetch(c-s).py"
-spec =import_util.spec_from_file_location("client_uniqueid_to_ip_fetch_c_s", module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 get_ips_and_netmasks = getattr(module, "get_ips_and_netmasks")
 
 module_path = "utils/tracker/client_ip_reg(c-s).py"
-spec =import_util.spec_from_file_location("client_uniqueid_to_ip_fetch_c_s", module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 get_my_connect_ip=getattr(module, "get_my_connect_ip")
@@ -30,18 +32,19 @@ get_netmask=getattr(module, "get_netmask")
 get_ip_address=getattr(module, "get_ip_address")
 
 module_path = "utils/file_transfer/fetch_unique_id_from_hashes(c-s).py"
-spec =import_util.spec_from_file_location("client_uniqueid_to_ip_fetch_c_s", module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 fetch_unique_id_from_hashes=getattr(module, "fetch_unique_id_from_hashes")
 
 module_path = "utils/file_transfer/sub_db_downloader(c-s).py"
-spec =import_util.spec_from_file_location("client_uniqueid_to_ip_fetch_c_s", module_path)
+spec =import_util.spec_from_file_location("", module_path)
 module =import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 subdb_downloader=getattr(module, "subdb_downloader")
 
-NODE_PORT=8890
+NODE_CONFIG='configs/node.json'
+NODE_PORT = json.load(open(NODE_CONFIG))["port"]
 
 C_S_model_SERVER_CONFIG="configs/server.json"
 C_S_model_SERVER_ADDR=json.load(open(C_S_model_SERVER_CONFIG))["server_addr"]
@@ -208,9 +211,9 @@ class DOWNLOAD_FILE_CLASS:
         for good_path in good_paths:
             if("Premium" in good_path):
                 continue
-            good_path = os.path.abspath(good_path)
+            good_path = os.path.realpath(good_path)
             for file_path in file_paths:
-                file_path = os.path.abspath(file_path)
+                file_path = os.path.realpath(file_path)
                 # Check if file_path is a subdirectory or file within good_path
                 if os.path.commonpath([good_path, file_path]) != good_path:
                     # reporting via threat report
@@ -229,13 +232,17 @@ class DOWNLOAD_FILE_CLASS:
         os.makedirs(folder_path, exist_ok=True)
     
     @staticmethod
-    def handle_download(file_paths, file_sizes, file_hashes,table_names):
+    def handle_download(file_paths, file_sizes, file_hashes,table_names,name__api="",unique_id__api="",lazy_file_hash__api="",file_loc__api="",api_loc=None):
         """
         Handle download
         """
         start_time=time.time()
         if not os.path.exists(TMP_DOWNLOAD_DIR):
             os.makedirs(TMP_DOWNLOAD_DIR)
+
+        API_LOC_DEFINED=False
+        if api_loc:
+            API_LOC_DEFINED=True
         global MAX_CONCURRENT_DOWNLOAD_TO_SINGLE_IP
         global BREAK_DOWNLOAD_WHEN_SIZE_EXCEED
         global IP_LOCK_TAKEN_BY_BIG_FILE_DOWNLOAD
@@ -362,6 +369,15 @@ class DOWNLOAD_FILE_CLASS:
             log(f"Found {len(low_speed_priority_queue)} low speed ips")
         LEN_high_speed_priority_queue=len(high_speed_priority_queue)
 
+        def report_progress_at_api(percentage):
+            if API_LOC_DEFINED:
+                nonlocal lazy_file_hash__api
+                nonlocal api_loc
+                data={lazy_file_hash__api:percentage}
+                try:
+                    requests.get(api_loc, params=data,timeout=0.01)            
+                except:
+                    pass
 
         def report_progress():
             downloaded = LOCKS.access_DOWNLOADED_SIZE(None,None,fetch=True)
@@ -369,6 +385,8 @@ class DOWNLOAD_FILE_CLASS:
             progress_percent = int(progress * 100)
             total_bar_length = int(progress*25)
 
+            threading.Thread(target=report_progress_at_api,args=(progress_percent,)).start()
+                
             bar = ('#' * (total_bar_length) + '-' * ((25 - total_bar_length)))
 
             bar_color = 'green' if progress_percent >= 50 else 'yellow'
@@ -941,6 +959,13 @@ class DOWNLOAD_FILE_CLASS:
         SEG_DONE_CNT={}
         SEG_DONE_CNT_lock=threading.Lock()
         log("Starting download.........................")
+        update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,0,TOTAL_SIZE,file_loc__api)
+        if API_LOC_DEFINED:
+                data={lazy_file_hash__api:0}
+                try:
+                    requests.get(api_loc, params=data,timeout=0.2)            
+                except:
+                    pass
         # high speed downloads
         threads=[]
         if len(big_file_info):
@@ -984,6 +1009,8 @@ class DOWNLOAD_FILE_CLASS:
             log(f"Unable to download all files , following files are not downloaded {FAILED_DOWNLOADS}",2)
             log(f"Please rerun the download again or we can automatically shedule the download for you",2)
             log(f"Failed download can also mean that the node has deleted the file and not updated the server yet",1)
+            update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,LOCKS.access_DOWNLOADED_SIZE(None,None,fetch=True),TOTAL_SIZE,file_loc__api)
+            report_progress()
             return False
         elif not(RETRY_DOWNLOADS.empty()):
             file_paths=[]
@@ -994,6 +1021,8 @@ class DOWNLOAD_FILE_CLASS:
             log(f"Please rerun the download again or we can automatically shedule the download for you",2) 
             log(f"Total time taken {time.time()-start_time} seconds",0) 
             log(f"Failed download can also mean that the node has deleted the file and not updated the server yet",1)
+            update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,LOCKS.access_DOWNLOADED_SIZE(None,None,fetch=True),TOTAL_SIZE,file_loc__api)
+            report_progress()
             return False
         else:
             bar = ('#' * (25) + '-' * ((25 - 25)))
@@ -1003,6 +1032,13 @@ class DOWNLOAD_FILE_CLASS:
             log("\nDownload complete")
             log(f"Downloaded {file_paths}",0)
             log(f"Total time taken {time.time()-start_time} seconds",0)
+            update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,100,TOTAL_SIZE,file_loc__api)
+            if API_LOC_DEFINED:
+                data={lazy_file_hash__api:100}
+                try:
+                    requests.get(api_loc, params=data,timeout=0.2)            
+                except:
+                    pass
             
             # remove .tmp_download files
             tmp_downloads=[]
@@ -1017,7 +1053,7 @@ class DOWNLOAD_FILE_CLASS:
             return True
     
     @staticmethod
-    def process_subdb(subdb_filename,table_name):
+    def process_subdb(subdb_filename,table_name,name__api="",unique_id__api="",lazy_file_hash__api="",file_loc__api="",api_loc=None):
         """
         Create directory structure
         """
@@ -1095,18 +1131,49 @@ class DOWNLOAD_FILE_CLASS:
             return True
 
         # Handle file downloading
-        res= DOWNLOAD_FILE_CLASS.handle_download(file_paths,file_sizes,file_hashes,table_names)
+        res= DOWNLOAD_FILE_CLASS.handle_download(file_paths,file_sizes,file_hashes,table_names,name__api,unique_id__api,lazy_file_hash__api, file_loc__api,api_loc)
         if (res):
             os.remove(subdb_dir)
         
         return res
     
+    @staticmethod
+    def up_check(unique_id):
+        """
+        check single unique_id if it is up
+        """
+        unique_ids=[unique_id]
+        CACHE_ID_TO_IP={}
+        unique_id_to_ips=get_ips_and_netmasks(unique_ids)
+        if(not unique_id_to_ips[0]):
+            log("Fetching with server failed, unable to get UNIQUE_ID_TO_IPS",2)
+            return False,0
+        else:
+            unique_id_to_ips=unique_id_to_ips[1]
+        c_s_server_ip=get_ip_address(C_S_model_SERVER_ADDR)
+        local_ip=get_my_connect_ip(c_s_server_ip)
+        local_netmask=get_netmask(local_ip)
+        ips_n_speeds=HASH_TO_IP_CLASS.live_and_correct_ips(local_netmask,unique_ids,unique_id_to_ips,CACHE_ID_TO_IP)
+        if not len(ips_n_speeds):
+            log(f"ip is not up for unique_id {unique_id}",2)
+            return False,0
+        speed=sum([speed for _,speed in ips_n_speeds])
+        return True,speed
+
         
     @staticmethod
-    def main(unique_id,lazy_file_hash,table_name):
+    def main(unique_id,lazy_file_hash,table_name,name__api="",file_loc__api="",api_loc=None):
         """
         Main function
         """
+
+        update_dashboard_db('Download',name__api,unique_id,lazy_file_hash,table_name,0,-1,file_loc__api)
+        if api_loc is not None:
+            data={lazy_file_hash:0}
+            try:
+                requests.get(api_loc, params=data,timeout=0.2)            
+            except:
+                pass
 
         # Download subdb
         result=subdb_downloader(unique_id,lazy_file_hash)
@@ -1118,7 +1185,9 @@ class DOWNLOAD_FILE_CLASS:
         subdb_filename=result
 
         # Process subdb and download files
-        res=DOWNLOAD_FILE_CLASS.process_subdb(subdb_filename,table_name)
+        unique_id__api=unique_id
+        lazy_file_hash__api=lazy_file_hash
+        res=DOWNLOAD_FILE_CLASS.process_subdb(subdb_filename,table_name,name__api,unique_id__api,lazy_file_hash__api,file_loc__api,api_loc)
         if res:
             log(f"Downloaded lazy_file_hash {lazy_file_hash} Successfully",0)
         else:
@@ -1129,5 +1198,5 @@ class DOWNLOAD_FILE_CLASS:
         
 if __name__ == '__main__':
     # DOWNLOAD_FILE_CLASS.main("dae9a489-a077-4bba-82de-3f0e6cde0288","79abf0609459c5bf1e6dcb5d124d16e5",table_name="Normal_Content_Main_Folder")
-     DOWNLOAD_FILE_CLASS.main("a7561257-324c-4186-91ec-45b5e766753f","e4a3871c86f6042767abebff3c1623f3",table_name="Normal_Content_Main_Folder")
+     DOWNLOAD_FILE_CLASS.main("451d55b4-2d4f-4c64-9f26-a594a38c5acf","fc9fd87d40ff41dd92d357dc66648817",table_name="Normal_Content_Main_Folder")
   

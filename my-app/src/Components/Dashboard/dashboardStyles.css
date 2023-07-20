@@ -1,0 +1,108 @@
+.dashboard-container{
+    width: 100%;
+    /* height: 100vh; */
+    display: flex;
+    flex-direction: column;
+    /* justify-content: space-evenly; */
+    /* overflow: scroll; */
+   
+    padding: 20px;
+
+    .byte-info{
+        display: flex;
+        flex-direction: row;
+       
+        justify-content: space-around;
+        border: 1px solid white;
+        padding: 10px;
+        .children{
+            border: 1px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+
+    .download-files-info{
+        margin-top: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+        width: 100%;
+        height: 80vh;
+        background-color: black;
+        overflow: scroll;
+
+        .download-info-header{
+            font-weight: bold;
+            background-color: rgb(39,38,38);
+            padding: 0px 20px;
+            position: sticky;
+            top: 0;
+
+            .file-card{
+                border: none;
+            }
+        }
+
+        .download-info-content{
+            padding: 0px 20px;
+            padding-bottom: 10px;
+        }
+
+        .file-card{
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            
+            border-bottom: 1px solid rgb(158, 158, 158);
+           
+            padding: 10px;
+            
+           
+            
+            .sno{
+                flex: 0.05;
+            }
+
+            .download-upload{
+                flex: 0.1;
+            }
+
+            .name{
+                flex: 0.15;
+            }
+
+            .table-name{
+                flex: 0.2;
+            }
+
+            .percentage{
+                flex: 0.12;
+            }
+
+            .size{
+                flex: 0.08;
+            }
+
+            .location{
+                flex: 0.3;
+            }
+            
+        }
+
+        .file-card>*{
+            
+            overflow: scroll;
+            white-space: nowrap;
+            padding: 5px;
+            text-align: center;
+            /* border: 1px solid white; */
+        }
+
+        
+    }
+
+    
+}
+

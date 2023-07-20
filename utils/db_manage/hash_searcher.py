@@ -24,7 +24,7 @@ def hash_list_searcher(hashes):
     for db in os.listdir(DATABASE_DIR):
         if(not os.path.isfile(os.path.join(DATABASE_DIR, db))):
             continue
-        if db==".gitkeep":
+        if db==".gitkeep" or db=="file_tree.db":
             continue
         try:
             conn = sqlite3.connect(os.path.join(DATABASE_DIR, db))
