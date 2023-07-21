@@ -10,6 +10,10 @@ setup(
         'netifaces==0.11.0',
         'termcolor==2.3.0',
         'requests==2.31.0',
+        'SQLAlchemy==2.0.19',
+        'Django==4.2.3',
+        'djangorestframework==3.14.0',
+
         # Add any other project dependencies here
     ],
     setup_requires=[
@@ -19,11 +23,10 @@ setup(
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 2',
         'Operating System :: OS Independent',
     ],
 )
 
 # # build command
-# python setup.py bdist_wheel --universal --python-tag=py2.py3 --plat-name=any
+# python ./whl_maker.py bdist_wheel --universal --python-tag=py3 --plat-name=any
 

@@ -1,6 +1,6 @@
 LICENSE
 README.md
-dist_maker.py
+whl_maker.py
 TorrentLAN.egg-info/PKG-INFO
 TorrentLAN.egg-info/SOURCES.txt
 TorrentLAN.egg-info/dependency_links.txt
