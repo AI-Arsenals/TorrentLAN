@@ -90,12 +90,41 @@ def getFolderList(request):
 
 
 @api_view(['GET'])
-def db_search(request):
+def getParent(request):
     query_dict=request.GET
+    dic={'Status': 200}
     # print(type(query_dict))
     content=main.db_search(list(query_dict.keys()),list(query_dict.values()))
-    content[0][5] = jsonify(content[0][5])
-    dic={'content':content}
+
+    if(content==False):
+        dic['Status']=500
+    else:
+        content[0][5] = jsonify(content[0][5])
+    dic['content'] = content
+    return HttpResponse(json.dumps(dic))
+
+
+def searchQuery(request):
+    query_dict=request.GET
+    dic={'Status':200, 'files':[],'folders':[]}
+
+    content=main.db_search(list(query_dict.keys()),list(query_dict.values()))
+    print(content)
+    if(content==False):
+        dic['Status']=500
+
+
+
+    else:
+        for item in content:
+            if(item[0]<0 or item[3]==1):
+                continue
+            item[5]=jsonify(item[5])
+            if(item[2]==1):
+                dic['files'].append(item)
+            else:
+                dic['folders'].append(item)
+
     return HttpResponse(json.dumps(dic))
 
 
@@ -147,3 +176,25 @@ def unique_id_is_up(request):
     }
 
     return HttpResponse(json.dumps(dic))
+
+
+@api_view(['POST'])
+def download(request):
+    data = json.loads(request.body.decode())
+   
+    content = main.download(data['unique_id'],data['lazy_file_hash'],data['table_name'],data['name'],data['file_loc'],f'api/progress?unique_id={data["unique_id"]}&lazy_file_hash={data["lazy_file_hash"]}')
+    dic = {
+        'staus': content
+    }
+
+    return HttpResponse(json.dumps(dic))
+
+
+@api_view(['GET'])
+def reveive_progress(request):
+    data=request.GET
+    
+
+    
+
+    
