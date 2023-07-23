@@ -382,7 +382,7 @@ class DOWNLOAD_FILE_CLASS:
         def report_progress():
             downloaded = LOCKS.access_DOWNLOADED_SIZE(None,None,fetch=True)
             progress = downloaded / TOTAL_SIZE
-            progress_percent = int(progress * 100)
+            progress_percent = min(int(progress * 100),100)
             total_bar_length = int(progress*25)
 
             threading.Thread(target=report_progress_at_api,args=(progress_percent,)).start()

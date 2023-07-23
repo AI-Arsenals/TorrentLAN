@@ -8,7 +8,7 @@ from utils.file_transfer.main import DOWNLOAD_FILE_CLASS
 from utils.db_manage.db_create import main as db_create_main
 from utils.db_manage.symlink_maker import create_symlink
 from utils.log.main import log
-from utils.dashboard_db.main import fetch_all_entries
+from utils.dashboard_db.main import fetch_all_entries,update_dashboard_db
 from utils.django_utils.dashboard_cache import cache_fetch,cache_update
 from utils.remover.log import fetch_logs_size,delete_logs
 
@@ -244,19 +244,22 @@ def db_search(search_bys: list, searchs: list):
     return results
 
 class dashboard_fxns():
-    def cache_fetcher():
-        """
-        --fetches cache data
-        - returns the cache data
-        - return False if cache is not initialized yet
-        """
-        return cache_fetch()
+    # def cache_fetcher(only_fetch=False):
+    #     """
+    #     --fetches cache data
+    #     - returns the cache data
+    #     - return False if cache is not initialized yet
+
+    #     ----- Please note that if you do cache_fetcher without setting only_fetch=True, then you won't be able to do cache_fetcher from another process until that same process do cache_updater
+    #     """
+    #     return cache_fetch(only_fetch)
     
-    def cache_updater(cache_data):
-        """
-        --updates cache data
-        """
-        return cache_update(cache_data)
+    # def cache_updater(cache_data):
+    #     """
+    #     --updates cache data
+
+    #     """
+    #     return cache_update(cache_data)
     
     def fetch_dashboard_db():
         """
@@ -268,6 +271,16 @@ class dashboard_fxns():
 
         """
         return fetch_all_entries()
+    
+    def updater_dashboard_db(download_or_upload, name, unique_id, lazy_file_hash, table_name, percentage, Size, file_location):
+        """
+        --updates dashboard db
+        - updates dashboard db with the given data
+        - the format of dashboard db can be checked at utils.dashboard_db.main     
+        -- [need to shift to an inmemory db updation in later versions]
+
+        """
+        update_dashboard_db(download_or_upload, name, unique_id, lazy_file_hash, table_name, percentage, Size, file_location)
 
 class remover():
     def log_size_fetcher()->int:
