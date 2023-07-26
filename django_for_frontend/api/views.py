@@ -1,5 +1,6 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse,JsonResponse
+
 from rest_framework.decorators import api_view
 import sys
 import os
@@ -7,6 +8,9 @@ import json
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 import main
+
+
+download_dic = {}
 
 def jsonify(s):
     return json.loads(s.replace("'",'"'))
@@ -38,6 +42,15 @@ def preprocess(content):
             l[i][5]['Size'] = bytesConversion(size)
     
     return content
+
+
+def clamp(n, min, max):
+    if n < min:
+        return min
+    elif n > max:
+        return max
+    else:
+        return n
 
 
 
@@ -181,10 +194,13 @@ def unique_id_is_up(request):
 @api_view(['POST'])
 def download(request):
     data = json.loads(request.body.decode())
-   
-    content = main.download(data['unique_id'],data['lazy_file_hash'],data['table_name'],data['name'],data['file_loc'],f'api/progress?unique_id={data["unique_id"]}&lazy_file_hash={data["lazy_file_hash"]}')
+    global download_dic
+    data['progress']=0
+    download_dic[data['lazy_file_hash']] = list(data.values())
+    content = main.download(data['unique_id'],data['lazy_file_hash'],data['table_name'],data['name'],data['file_loc'],f'http://127.0.0.1:8000/api/progress')
+    print(download_dic)
     dic = {
-        'staus': content
+        'staus': 1
     }
 
     return HttpResponse(json.dumps(dic))
@@ -193,6 +209,46 @@ def download(request):
 @api_view(['GET'])
 def reveive_progress(request):
     data=request.GET
+    global download_dic
+   
+    lazy_file_hash = list(data.keys())[0]
+    progress = float(data[lazy_file_hash])
+
+    print(download_dic)
+    prev = download_dic[lazy_file_hash][-1]
+    print('prev',prev)
+    download_dic[lazy_file_hash][-1] = clamp(progress,prev,100)
+
+
+    
+    return JsonResponse({
+        'lazy_file_hash': lazy_file_hash,
+        'updated_progress': download_dic[lazy_file_hash]
+    })
+
+
+@api_view(['GET'])
+def getDashboardEntries(request):
+    content = main.fetch_all_entries()
+
+    dic={
+        'Status':200
+
+    }
+
+    if(content==False):
+        dic['Status']=500
+
+    # else:
+    #     for i in range(len(content)):
+    #         content[i] = jsonify(content[i])
+
+
+    dic['content'] = content
+    return JsonResponse(dic)
+
+
+
     
 
     
