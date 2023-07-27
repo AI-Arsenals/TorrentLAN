@@ -299,4 +299,4 @@ class remover():
         return delete_logs()
 
 if __name__=='__main__':
-    download("b43b6944-f193-4f19-8010-6c22dacbf4c9","7453adedd3a1c5dded3b51ff7aaf085a",table_name="Normal_Content_Main_Folder",name__api="test_name",file_loc__api="data/Normal/Games",api_loc="http://127.0.0.1:8000/recv_download")
+    download("b43b6944-f193-4f19-8010-6c22dacbf4c9","7453adedd3a1c5dded3b51ff7aaf085a",table_name="Normal_Content_Main_Folder",name__api="test_name",file_loc__api="data/Normal/Games",api_loc="http://127.0.0.1:8000/api/progress")

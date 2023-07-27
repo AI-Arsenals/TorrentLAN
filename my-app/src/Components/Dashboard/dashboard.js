@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import '../Dashboard/dashboardStyles.css'
 
 
@@ -50,24 +50,11 @@ const Header = ({header})=>{
 
 
 
-const DownloadFilesInfo = () =>{
+const DownloadFilesInfo = ({files}) =>{
   const header = ['Sno','Download','test_name','unique_id','lazy_file_hash','table_name','percentage','Size','file-location']
-  const files = [
-    
-    [1,'Download','Games','kfjsd;l','sdlfjsdfkljsdfkl','Normal content Main folder','100','49B','D:/torrantLan'],
-    [2,'Download','Games','kfjsd;l','sdlfjsdfkljsdfkl','Normal content Main folder','100','49B','D:/torrantLan'],
-    [3,'Download','Games','kfjsd;l','sdlfjsdfkljsdfkl','Normal content Main folder','100','49B','D:/torrantLan'],
-    [4,'Download','Games','kfjsd;l','sdlfjsdfkljsdfkl','Normal content Main folder','100','49B','D:/torrantLan'],
-    [5,'Download','Games','kfjsd;l','sdlfjsdfkljsdfkl','Normal content Main folder','100','49B','D:/torrantLan'],
-    [6,'Download','Games','kfjsd;l','sdlfjsdfkljsdfkl','Normal content Main folder','100','49B','D:/torrantLan'],
-    [7,'Download','Games','kfjsd;l','sdlfjsdfkljsdfkl','Normal content Main folder','100','49B','D:/torrantLan'],
-    [8,'Download','Games','kfjsd;l','sdlfjsdfkljsdfkl','Normal content Main folder','100','49B','D:/torrantLan'],
-    [9,'Download','Games','kfjsd;l','sdlfjsdfkljsdfkl','Normal content Main folder','100','49B','D:/torrantLan'],
-    [10,'Download','Games','kfjsd;l','sdlfjsdfkljsdfkl','Normal content Main folder','100','49B','D:/torrantLan'],
-    [11,'Download','Games','kfjsd;l','sdlfjsdfkljsdfkl','Normal content Main folder','100','49B','D:/torrantLan'],
-    [12,'Download','Games','kfjsd;l','sdlfjsdfkljsdfkl','Normal content Main folder','100','49B','D:/torrantLan'],
 
-  ]
+  
+  
   return <div className="download-files-info">
     <Header header={header}/>
     <div className="download-info-content">
@@ -81,11 +68,23 @@ const DownloadFilesInfo = () =>{
 }
 
 const Dashboard = () => {
+
+  const [entries,setEntries] = useState([])
+
+  const fetchEntries = async()=>{
+    let response = await fetch('api/dashboard_entries')
+    let data = await response.json()
+    
+    console.log(data)
+  }
+
+  fetchEntries()
+
   return (
     <div className='dashboard-container'>
 
       <BytesInfo/>
-      <DownloadFilesInfo/>
+      <DownloadFilesInfo files={entries}/>
       
     </div>
   )

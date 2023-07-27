@@ -127,7 +127,7 @@ const FolderView = (props) => {
     downloadList.map((file) => {
       data = {
         unique_id: file[7],
-        lazy_file_hash: file[8],
+        lazy_file_hash: file[6],
         table_name: "Normal_Content_Main_Folder",
         name: file[1],
         file_loc: file[5]["Path"],
