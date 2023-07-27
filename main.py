@@ -9,7 +9,7 @@ from utils.db_manage.db_create import main as db_create_main
 from utils.db_manage.symlink_maker import create_symlink
 from utils.log.main import log
 from utils.dashboard_db.main import fetch_all_entries,update_dashboard_db
-from utils.django_utils.dashboard_cache import cache_fetch,cache_update
+# from utils.django_utils.dashboard_cache import cache_fetch,cache_update
 from utils.remover.log import fetch_logs_size,delete_logs
 
 

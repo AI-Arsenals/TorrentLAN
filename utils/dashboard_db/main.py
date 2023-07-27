@@ -77,9 +77,10 @@ def fetch_all_entries():
     entries = session.query(Dashboard).all()
     session.close()
 
-    results = []
-    for entry in entries:
-        results.append(f"ID: {entry.id}, Name: {entry.name}, Unique ID: {entry.unique_id}, Lazy File Hash: {entry.lazy_file_hash}, Table Name: {entry.table_name}, Percentage: {entry.percentage}, Size: {entry.Size}, File Location: {entry.file_location}")
+    results = [{"id": entry.id, "name": entry.name, "unique_id": entry.unique_id,
+            "lazy_file_hash": entry.lazy_file_hash, "table_name": entry.table_name,
+            "percentage": entry.percentage, "Size": entry.Size,
+            "file_location": entry.file_location} for entry in entries]
 
     log(f"Fetching dashboard entries of len {len(results)}")
     return results
