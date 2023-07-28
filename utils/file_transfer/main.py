@@ -959,7 +959,7 @@ class DOWNLOAD_FILE_CLASS:
         SEG_DONE_CNT={}
         SEG_DONE_CNT_lock=threading.Lock()
         log("Starting download.........................")
-        update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,0,TOTAL_SIZE,file_loc__api)
+        # update_dashboard_db('Download',name__api,unique_id__api,lazy_file_hash__api,table_name,0,TOTAL_SIZE,file_loc__api) commented to incorporate with frontend
         if API_LOC_DEFINED:
                 data={lazy_file_hash__api:0}
                 try:
@@ -1167,7 +1167,7 @@ class DOWNLOAD_FILE_CLASS:
         Main function
         """
 
-        update_dashboard_db('Download',name__api,unique_id,lazy_file_hash,table_name,0,-1,file_loc__api)
+        # update_dashboard_db('Download',name__api,unique_id,lazy_file_hash,table_name,0,-1,file_loc__api) commented to incorporate with frontend
         if api_loc is not None:
             data={lazy_file_hash:0}
             try:

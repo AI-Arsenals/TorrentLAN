@@ -65,6 +65,43 @@ def update_dashboard_db(download_or_upload, name, unique_id, lazy_file_hash, tab
     session.commit()
     session.close()
 
+def search_dashboard_db(search_bys, searchs):
+    create_database()
+    database = f"sqlite:///{DATABASE_PATH}"
+    engine = create_engine(database)
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    # Check if a record exists
+    query_filters = [getattr(Dashboard, search_by) == search for search_by, search in zip(search_bys, searchs)]
+    existing_record = session.query(Dashboard).filter(*query_filters).all()
+    return [{"id": entry.id, "download_or_upload": entry.download_or_upload, "name": entry.name, "unique_id": entry.unique_id,
+                "lazy_file_hash": entry.lazy_file_hash, "table_name": entry.table_name,
+                "percentage": entry.percentage, "Size": entry.Size,
+                "file_location": entry.file_location} for entry in existing_record]
+
+def delete_row_dashboard_db(download_or_upload, lazy_file_hash):
+    create_database()
+    database = f"sqlite:///{DATABASE_PATH}"
+    engine = create_engine(database)
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    # Check if a record exists
+    existing_record = session.query(Dashboard).filter(
+        Dashboard.lazy_file_hash == lazy_file_hash, Dashboard.download_or_upload == download_or_upload).first()
+
+    if existing_record:
+        session.delete(existing_record)
+        log(f"Deleting dashboard entry: {download_or_upload}, {lazy_file_hash}")
+    else:
+        log(f"Dashboard entry not found for row_deletion: {download_or_upload}, {lazy_file_hash}",2)
+
+    session.commit()
+    session.close()
+
 
 def fetch_all_entries():
     create_database()
@@ -77,10 +114,10 @@ def fetch_all_entries():
     entries = session.query(Dashboard).all()
     session.close()
 
-    results = [{"id": entry.id, "name": entry.name, "unique_id": entry.unique_id,
-            "lazy_file_hash": entry.lazy_file_hash, "table_name": entry.table_name,
-            "percentage": entry.percentage, "Size": entry.Size,
-            "file_location": entry.file_location} for entry in entries]
+    results = [{"id": entry.id, "download_or_upload": entry.download_or_upload, "name": entry.name, "unique_id": entry.unique_id,
+                "lazy_file_hash": entry.lazy_file_hash, "table_name": entry.table_name,
+                "percentage": entry.percentage, "Size": entry.Size,
+                "file_location": entry.file_location} for entry in entries]
 
     log(f"Fetching dashboard entries of len {len(results)}")
     return results
@@ -89,4 +126,10 @@ def fetch_all_entries():
 if __name__ == "__main__":
     update_dashboard_db("Upload", "Game", "unique_id3",
                         "lazy_file_hash2", "table_name", 54, 100, "file_location")
-    print(fetch_all_entries())
+    log(fetch_all_entries())
+    delete_row_dashboard_db("Upload", "lazy_file_hash2")
+    log(search_dashboard_db(["download_or_upload", "lazy_file_hash"], ["Upload", "lazy_file_hash2"]))
+    log(search_dashboard_db(["download_or_upload", "lazy_file_hash"], ["Download", "7453adedd3a1c5dded3b51ff7aaf085a"]))
+    delete_row_dashboard_db("Download", "7453adedd3a1c5dded3b51ff7aaf085a")
+    log(search_dashboard_db(["download_or_upload", "lazy_file_hash"], ["Download", "7453adedd3a1c5dded3b51ff7aaf085a"]))
+
