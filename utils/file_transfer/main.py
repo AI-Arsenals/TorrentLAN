@@ -353,18 +353,18 @@ class DOWNLOAD_FILE_CLASS:
         else:
             AVG_LOW_SPEEDS=0.000001
 
-        for _,file_hash,_,_ in big_file_info:
-            if file_hash in HASH_TO_IP and HASH_TO_IP[file_hash]:
-                for ip in HASH_TO_IP[file_hash]:
-                    if ip in map_high_speed_ip_usage:
-                        map_high_speed_ip_usage[ip]+=1
-                    else:
-                        map_high_speed_ip_usage[ip]=1
 
         if(not high_speed_priority_queue):
             log("No high speed ips found",1)
             log(f"Downloading with slow speed ips",1)
         else:
+            for _,file_hash,_,_ in big_file_info:
+                if file_hash in HASH_TO_IP and HASH_TO_IP[file_hash]:
+                    for ip in HASH_TO_IP[file_hash]:
+                        if ip in map_high_speed_ip_usage:
+                            map_high_speed_ip_usage[ip]+=1
+                        else:
+                            map_high_speed_ip_usage[ip]=1
             log(f"Found {len(high_speed_priority_queue)} high speed ips")
             log(f"Found {len(low_speed_priority_queue)} low speed ips")
         LEN_high_speed_priority_queue=len(high_speed_priority_queue)
@@ -735,7 +735,7 @@ class DOWNLOAD_FILE_CLASS:
                     res,ip=LOCKS.access_high_speed_priority_queue(HASH_TO_IP[file_hash])
                     if ip and not res:
                         LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD(release=True)
-                        RETRY_DOWNLOADS.put((seg_file_path,file_hash,table_name,start_byte,end_byte))
+                        RETRY_DOWNLOADS.put((seg_file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
                         return
                     time.sleep(1)
                 if(res):
@@ -945,7 +945,7 @@ class DOWNLOAD_FILE_CLASS:
             ips_len=len(HASH_TO_IP[file_hash])
             if((((file_size)/(AVG_LOW_SPEEDS*ips_len +1e-9))<(ESTIMATED_TIME/2)) and (LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD(curr_cnt=True)<=0)):
                 send_to_low_speed=True
-            if ((not len(small_file_info)) or((file_size>SIZE_AFTER_WHICH_FILE_IS_CONSIDERED_BIG) and LEN_high_speed_priority_queue and (not send_to_low_speed))):
+            if ((not len(small_file_info) and LEN_high_speed_priority_queue) or((file_size>SIZE_AFTER_WHICH_FILE_IS_CONSIDERED_BIG) and LEN_high_speed_priority_queue and (not send_to_low_speed))):
                 if start_byte and end_byte:
                     handle_big_files(file_path,file_hash,table_name,start_byte,end_byte)
                 else:
@@ -998,6 +998,7 @@ class DOWNLOAD_FILE_CLASS:
 
         threads=[]
         while(not(RETRY_DOWNLOADS.empty()) and not(LOCKS.access_ALL_IPS_N_SPEED(None,None,check=True))):
+            print("len of retry downloads",RETRY_DOWNLOADS.qsize())
             file_path,file_hash,table_name,file_size,start_byte,end_byte=RETRY_DOWNLOADS.get()
             thread = threading.Thread(target=handle_thread,args=(file_path,file_hash,table_name,file_size,start_byte,end_byte))
             thread.start()
@@ -1198,5 +1199,5 @@ class DOWNLOAD_FILE_CLASS:
         
 if __name__ == '__main__':
     # DOWNLOAD_FILE_CLASS.main("dae9a489-a077-4bba-82de-3f0e6cde0288","79abf0609459c5bf1e6dcb5d124d16e5",table_name="Normal_Content_Main_Folder")
-     DOWNLOAD_FILE_CLASS.main("451d55b4-2d4f-4c64-9f26-a594a38c5acf","fc9fd87d40ff41dd92d357dc66648817",table_name="Normal_Content_Main_Folder")
+    DOWNLOAD_FILE_CLASS.main("b43b6944-f193-4f19-8010-6c22dacbf4c9","1a7131b3f5968315254372c86dc30317",table_name="Normal_Content_Main_Folder",name__api="test_name",file_loc__api="data/Normal/Games",api_loc="http://127.0.0.1:8000/api/progress")
   
