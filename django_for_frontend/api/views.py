@@ -4,7 +4,9 @@ from django.http import HttpResponse,JsonResponse
 from rest_framework.decorators import api_view
 import sys
 import os
+import threading
 import json
+import queue
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 import main
@@ -33,14 +35,29 @@ def bytesConversion(size):
 
 def preprocess(content):
 
-    units = ['B','KB','MB','GB','TB']
+    processed_content={}
+    content=list(content)
+    print(content)
+    for index,item in enumerate(content[0]):
+        
+        hash = item[8]
+        
+        if(hash in processed_content):
+            processed_content[hash][7].append(item[7])
+        else:
+            temp=[]
+            temp.append(item[7])
+            item[7]=temp
+            processed_content[hash] = item
+
+    content[0] = list(processed_content.values())
 
     for l in content:
         for i in range(len(l)):
             l[i][5] = jsonify(l[i][5])
             size = float(l[i][5]['Size'])
             l[i][5]['Size'] = bytesConversion(size)
-    
+   
     return content
 
 
@@ -178,12 +195,36 @@ def updateDashboard_cache(request):
 
 @api_view(['GET'])
 def unique_id_is_up(request):
-    unique_id = request.GET.get('unique_id',None)
-    content = main.uniqueid_is_up(unique_id)
-    print('content',content)
-    new_content = [content[0],(bytesConversion(content[1])+'/s')]
+    unique_ids = request.GET.get('unique_id', None)
+    unique_ids = unique_ids.split(',')
+    print(unique_ids)
 
-    dic={
+    results = queue.Queue()
+
+    threads = []
+    def helper_unique_up(id, results):
+        content = main.uniqueid_is_up(id)
+        results.put(content)
+
+    for id in unique_ids:
+        thread = threading.Thread(target=helper_unique_up, args=(id, results))
+        thread.start()
+        threads.append(thread)
+
+    for thread in threads:
+        thread.join()
+
+    AVAILABLE = False
+    TOTAL_SPEED = 0
+
+    while not results.empty():
+        top = results.get()
+        AVAILABLE |= top[0]
+        TOTAL_SPEED += top[1]
+
+    new_content = [AVAILABLE, (bytesConversion(TOTAL_SPEED) + '/s')]
+
+    dic = {
         'is_available': bool(new_content[0]),
         'speed': new_content[1]
     }
@@ -195,29 +236,46 @@ def unique_id_is_up(request):
 def download(request):
     data = json.loads(request.body.decode())
     global download_dic
-    data['progress']=0
-    download_dic[data['lazy_file_hash']] = list(data.values())
-    content = main.download(data['unique_id'],data['lazy_file_hash'],data['table_name'],data['name'],data['file_loc'],f'http://127.0.0.1:8000/api/progress')
-    print(download_dic)
+    data['percentage']=0
+    download_dic[data['lazy_file_hash']] = data
+    
+
+    for d in data:
+        print(d,type(data[d]))
+
+
+    content = main.download(data['unique_id'][0],data['lazy_file_hash'],data['table_name'],data['name'],"data/Normal/Games",'http://127.0.0.1:8000/api/progress')
+    print(content[0],type(content[0]))
     dic = {
-        'staus': 1
+        'status': content[0]
     }
+    
+
+
 
     return HttpResponse(json.dumps(dic))
 
 
 @api_view(['GET'])
-def reveive_progress(request):
+def receive_progress(request):
     data=request.GET
     global download_dic
    
     lazy_file_hash = list(data.keys())[0]
     progress = float(data[lazy_file_hash])
 
-    print(download_dic)
-    prev = download_dic[lazy_file_hash][-1]
-    print('prev',prev)
-    download_dic[lazy_file_hash][-1] = clamp(progress,prev,100)
+    try:
+        prev = download_dic[lazy_file_hash]['percentage']
+        progress = clamp(progress,prev,100)
+
+        if(progress==100):
+            download_dic.pop(lazy_file_hash)
+        else:
+            download_dic[lazy_file_hash]['percentage'] = progress
+    
+    except:
+        return HttpResponse("Something went wrong")
+
 
 
     
@@ -239,12 +297,21 @@ def getDashboardEntries(request):
     if(content==False):
         dic['Status']=500
 
-    # else:
-    #     for i in range(len(content)):
-    #         content[i] = jsonify(content[i])
+  
+
+    
 
 
     dic['content'] = content
+    return JsonResponse(dic)
+
+
+@api_view(['GET'])
+def getCurrentDownloads(request):
+    global download_dic
+    dic={}
+    dic['content'] = list(download_dic.values())
+    
     return JsonResponse(dic)
 
 

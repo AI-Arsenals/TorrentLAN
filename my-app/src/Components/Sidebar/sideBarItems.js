@@ -19,7 +19,11 @@ const items=[
         icon: "fa-solid fa-upload",
         
 
-    }
+    },{
+        title: "Profile",
+        url: "/profile",
+        icon: "fa-solid fa-user",
+    },
     
     
 ]

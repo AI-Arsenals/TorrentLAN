@@ -10,7 +10,8 @@ urlpatterns = [
     path('unique_id_is_up',views.unique_id_is_up,name="unique_id_is_up"),
     path('download',views.download,name='download'),
     path('search_query',views.searchQuery,name="api call for search operation"),
-    path('progress',views.reveive_progress,name="receive progress"),
+    path('progress',views.receive_progress,name="receive progress"),
     path('dashboard_entries',views.getDashboardEntries,name='dashboard entries'),
+    path('currentDownloads',views.getCurrentDownloads,name="get current downloads"),
     
 ]

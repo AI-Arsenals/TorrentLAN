@@ -1,0 +1,25 @@
+
+    #username-field{
+        color: white;
+        background-color: transparent;
+        border: none;
+        width: 100%;
+    }
+
+    #username-field:focus{
+        outline: 0;
+        outline-style: none;
+    }
+
+    .profile{
+        width: 60%;
+        border: 1px solid white;
+        display: flex;
+        justify-content: center;
+        border-radius: 20px;
+    }
+
+    .username-form{
+        width: 80%;
+    }
+

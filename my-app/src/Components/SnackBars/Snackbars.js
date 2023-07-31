@@ -1,46 +1,19 @@
 import React from 'react'
-import { toast } from 'react-toastify';
-
-const style={position: "top-right",
-autoClose: 5000,
-hideProgressBar: false,
-closeOnClick: true,
-pauseOnHover: true,
-draggable: true,
-progress: undefined,
-theme: "dark"}
+import {Snackbar,Alert} from '@mui/material'
+const CustomSnackbar = ({prop}) => {
 
 
-const success = (message)=>{
-    toast.success(message, style);
+  return (
+    <Snackbar open={prop.open} onClose={prop.handleClose} autoHideDuration={prop.duration?prop.duration:4000}>
+        <Alert variant="filled" severity={prop.severity?prop.severity:"success"} onClose={prop.handleClose}>
+          {prop.message?prop.message:"Sample text"}
+        </Alert>
+    </Snackbar>
+  )
 }
 
-const info = (message)=>{
-    toast.info(message.style);
-}
+export default CustomSnackbar
 
-const error = (message)=>{
-    toast.error(message.style);
-}
-
-const warning = (message)=>{
- toast.warn(message.style);
-}
-
-const functions={
-    'success': success,
-    'info': info,
-    'error': error,
-    'warn': warning
-}
-
-
-
-const Snackbars = (type,message) => {
-  functions[type](message);
-}
-
-export default Snackbars
 
 
 

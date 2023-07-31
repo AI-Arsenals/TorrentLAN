@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useEffect } from "react";
 import RightSideBar from "../RightSideBar/rightSideBar";
 import FolderItem from "./folder-item";
-
+import Snackbar from "../SnackBars/Snackbars";
 const FolderView = (props) => {
   const [rightIsClosed, setRightIsClosed] = useState(false);
 
@@ -36,8 +36,26 @@ const FolderView = (props) => {
   const [downloadList, setDownloadList] = useState([]);
   const [currFolder, setCurrFolder] = useState(defualtFolder);
   const [propertiesFolder, setPropertiesFolder] = useState([]);
-
   const [highlightedFolder, setHighlightedFolder] = useState(null);
+  const [notify, setNotify] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+    handleClose: () => {
+      setNotify((prev) => ({ ...prev, open: false }));
+    },
+  });
+
+  const alert = (message,severity)=>{
+    setNotify(prev=>({
+      ...prev,
+      open: true,
+      message: message,
+      severity: severity
+    }))
+
+
+  }
 
   const setContentList = (data) => {
     setContentListPrimitive(data);
@@ -46,11 +64,10 @@ const FolderView = (props) => {
   const getFolderList = async () => {
     let response, data, depth;
 
-    if(currFolder.length==1){
-      response = await fetch(`api/search_query?name=${currFolder[0]}`)
-      depth=-1
-    }
-    else if (currFolder[0] === -3) {
+    if (currFolder.length == 1) {
+      response = await fetch(`api/search_query?name=${currFolder[0]}`);
+      depth = -1;
+    } else if (currFolder[0] === -3) {
       depth = 0;
     } else if (currFolder[0] < 0) {
       depth = -1 * currFolder[0];
@@ -66,7 +83,7 @@ const FolderView = (props) => {
       response = await fetch(
         `api/getFolderListAtDepth?depth=${depth}&folder=${currFolder[1]}`
       );
-    } else if(depth > 0) {
+    } else if (depth > 0) {
       response = await fetch(
         `api/getFolderList?unique_id=${currFolder[7]}&lazy_file_hash=${currFolder[6]}`
       );
@@ -121,26 +138,41 @@ const FolderView = (props) => {
     }
   };
 
-  const downloadHandler = () => {
+  const downloadHandler = async() => {
     console.log(downloadList);
+    alert("download started. see Dashboard for more details","info")
+    deselectAll()
     let data;
-    downloadList.map((file) => {
+    await downloadList.map(async(file) => {
       data = {
-        unique_id: file[7],
-        lazy_file_hash: file[6],
-        table_name: "Normal_Content_Main_Folder",
+        id: file[0],
         name: file[1],
-        file_loc: file[5]["Path"],
+        is_file: file[2],
+        paernt_id: file[3],
+        child_id: file[4],
+        lazy_file_hash: file[6],
+        Size: file[5]["Size"],
+        unique_id: file[7],
+        table_name: "Normal_Content_Main_Folder",
+        file_location: "temp",
       };
       data = JSON.stringify(data);
-      fetch("api/download", {
+      let response = await fetch("api/download", {
         method: "POST",
         body: data,
         headers: {
           "Content-type": "application/json; charset=UTF-8",
         },
       });
+
+      data = await response.json()
+      if(data['status']===false){
+        
+        alert("something went wrong","error")
+        return;
+      }
     });
+    alert("download successful","success")
   };
 
   const switchFolder = async () => {
@@ -170,12 +202,10 @@ const FolderView = (props) => {
     deselectHighlighted();
     let response, data;
 
-    if(currFolder.length==1){
+    if (currFolder.length == 1) {
       setCurrFolder(defualtFolder);
       return;
-    }
-
-    else if (currFolder[3] === null) {
+    } else if (currFolder[3] === null) {
       if (currFolder[0] === "default") {
         return;
       } else if (currFolder[0] === -1) {
@@ -226,7 +256,9 @@ const FolderView = (props) => {
         <div className="right-content">
           {downloadList.length > 0 && (
             <div className="downloadButtonContainer">
-              {(currFolder[0] > 0 || currFolder[0] === -2 || currFolder.length===1) && (
+              {(currFolder[0] > 0 ||
+                currFolder[0] === -2 ||
+                currFolder.length === 1) && (
                 <i
                   className="fa-regular fa-circle-down fa-2xl"
                   onClick={downloadHandler}
@@ -255,7 +287,7 @@ const FolderView = (props) => {
     const submitHandler = (e) => {
       e.preventDefault();
       console.log(searchText);
-      setCurrFolder([searchText])
+      setCurrFolder([searchText]);
     };
     return (
       <div className="search-wrapper">
@@ -275,6 +307,7 @@ const FolderView = (props) => {
 
   return (
     <div className="main-container">
+      <Snackbar prop={notify} />
       <div className="downloadView">
         <div className="viewport">
           <div className="viewport-header">
@@ -286,7 +319,6 @@ const FolderView = (props) => {
             </div>
           </div>
 
-          
           {contentList["folders"].map((item, index) => {
             return (
               <FolderItem
