@@ -7,7 +7,7 @@ from utils.log.main import log
 from utils.dashboard_db.main import fetch_all_entries,update_dashboard_db,delete_row_dashboard_db,search_dashboard_db
 # from utils.django_utils.dashboard_cache import cache_fetch,cache_update
 from utils.remover.log import fetch_logs_size,delete_logs
-
+from utils.remover.tmp_downloads import fetch_tmp_size,delete_tmp
 
 
 module_path = "utils/tracker/client(c-s).py"
@@ -340,6 +340,23 @@ class remover():
         --removes logs
         """
         return delete_logs()
+    
+    def tmp_folder_size_fetcher()->int:
+        """
+        --fetches tmp size
+
+        Returns:
+            bool : the tmp size in bytes
+        """
+        return fetch_tmp_size()
+    
+    def tmp_folder_remover():
+        """
+        --removes tmp
+        - please make a note for user that deleting tmp may cause problems with the incomplete downloads
+
+        """
+        return delete_tmp()
 
 if __name__=='__main__':
     download("b43b6944-f193-4f19-8010-6c22dacbf4c9","1a7131b3f5968315254372c86dc30317",table_name="Normal_Content_Main_Folder",name__api="test_name",file_loc__api="data/Normal/Games",api_loc="http://127.0.0.1:8000/api/progress")

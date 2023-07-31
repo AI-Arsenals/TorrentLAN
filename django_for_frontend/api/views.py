@@ -11,7 +11,7 @@ import queue
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 import main
 
-
+download_dick_lock=threading.Lock()
 download_dic = {}
 
 def jsonify(s):
@@ -236,8 +236,11 @@ def unique_id_is_up(request):
 def download(request):
     data = json.loads(request.body.decode())
     global download_dic
+    global download_dick_lock
     data['percentage']=0
+    download_dick_lock.acquire()
     download_dic[data['lazy_file_hash']] = data
+    download_dick_lock.release()
     
 
     for d in data:
@@ -260,10 +263,12 @@ def download(request):
 def receive_progress(request):
     data=request.GET
     global download_dic
+    global download_dick_lock
    
     lazy_file_hash = list(data.keys())[0]
     progress = float(data[lazy_file_hash])
 
+    download_dick_lock.acquire()
     try:
         prev = download_dic[lazy_file_hash]['percentage']
         progress = clamp(progress,prev,100)
@@ -275,10 +280,9 @@ def receive_progress(request):
     
     except:
         return HttpResponse("Something went wrong")
+        # if download_dick_lock is acquired then release
 
-
-
-    
+    download_dick_lock.release()
     return JsonResponse({
         'lazy_file_hash': lazy_file_hash,
         'updated_progress': download_dic[lazy_file_hash]
@@ -309,8 +313,11 @@ def getDashboardEntries(request):
 @api_view(['GET'])
 def getCurrentDownloads(request):
     global download_dic
+    global download_dick_lock
     dic={}
+    download_dick_lock.acquire()
     dic['content'] = list(download_dic.values())
+    download_dick_lock.release()
     
     return JsonResponse(dic)
 
