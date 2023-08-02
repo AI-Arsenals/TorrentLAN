@@ -13,6 +13,7 @@ import main
 
 
 download_dic = {}
+re_render = False
 
 def jsonify(s):
     return json.loads(s.replace("'",'"'))
@@ -260,6 +261,7 @@ def download(request):
 def receive_progress(request):
     data=request.GET
     global download_dic
+    global re_render
    
     lazy_file_hash = list(data.keys())[0]
     progress = float(data[lazy_file_hash])
@@ -270,19 +272,20 @@ def receive_progress(request):
 
         if(progress==100):
             download_dic.pop(lazy_file_hash)
+            re_render=True
         else:
             download_dic[lazy_file_hash]['percentage'] = progress
     
+        return JsonResponse({
+            'lazy_file_hash': lazy_file_hash,
+            'updated_progress': download_dic[lazy_file_hash]
+        })
     except:
         return HttpResponse("Something went wrong")
 
 
 
     
-    return JsonResponse({
-        'lazy_file_hash': lazy_file_hash,
-        'updated_progress': download_dic[lazy_file_hash]
-    })
 
 
 @api_view(['GET'])
@@ -309,8 +312,12 @@ def getDashboardEntries(request):
 @api_view(['GET'])
 def getCurrentDownloads(request):
     global download_dic
+    global re_render
     dic={}
     dic['content'] = list(download_dic.values())
+    dic['re-render'] = re_render
+    if(re_render):
+        re_render=False
     
     return JsonResponse(dic)
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import CircularProgress from '@mui/material/CircularProgress';
 import "../Dashboard/dashboardStyles.css";
 
 
@@ -13,7 +14,7 @@ const BytesInfo = () => {
 
 const FileCard = ({ file, index }) => {
   return (
-    <div className="file-card" id={`temp${file[0]}`}>
+    <div className="file-card" id={`temp${index}`}>
       <div className="sno">{index}</div>
       <div className="download-upload">download</div>
       <div className="name">{file["name"]}</div>
@@ -25,6 +26,22 @@ const FileCard = ({ file, index }) => {
   );
 };
 
+const ActiveFileCard = ({ file, index }) => {
+  return (
+    <div className="file-card" id={`index`}>
+      <div className="sno">{index}</div>
+      <div className="download-upload">download</div>
+      <div className="name">{file["name"]}</div>
+      <div className="table-name">{file["table_name"]}</div>
+      <div className="percentage">{file["percentage"]}<CircularProgress variant="determinate" value={file["percentage"]}/></div>
+      <div className="size">{file["Size"]}</div>
+      <div className="location">{file["file_location"]}</div>
+    </div>
+  );
+};
+
+
+
 const Header = ({ header }) => {
   return (
     <div className="download-info-header">
@@ -34,6 +51,7 @@ const Header = ({ header }) => {
         <div className="name">{header[2]}</div>
         <div className="table-name">{header[5]}</div>
         <div className="percentage">{header[6]}</div>
+        {/* <div className="percentage"></div> */}
         <div className="size">{header[7]}</div>
         <div className="location">{header[8]}</div>
       </div>
@@ -41,14 +59,16 @@ const Header = ({ header }) => {
   );
 };
 
-const FetchRenderActiveFiles = () => {
+const FetchRenderActiveFiles = ({fetchEntries}) => {
   const [activeFiles, setActiveFiles] = useState([]);
 
   const fetchActiveEntries = async () => {
     let response = await fetch("api/currentDownloads");
     let data = await response.json();
-    console.log(data["content"]);
-
+    
+    if(data["re-render"]){
+      fetchEntries()
+    }
     setActiveFiles(data["content"]);
   };
 
@@ -65,13 +85,13 @@ const FetchRenderActiveFiles = () => {
   return (
     <>
       {activeFiles.map((file, i) => {
-        return <FileCard file={file} index={i} key={i} />;
+        return <ActiveFileCard file={file} index={i} key={i} />;
       })}
     </>
   );
 };
 
-const DownloadFilesInfo = ({ files }) => {
+const DownloadFilesInfo = ({ files,fetchEntries }) => {
   const header = [
     "Sno",
     "Download",
@@ -89,7 +109,7 @@ const DownloadFilesInfo = ({ files }) => {
       <Header header={header} />
 
       <div className="download-info-content">
-        <FetchRenderActiveFiles />
+        <FetchRenderActiveFiles fetchEntries={fetchEntries} />
        
         {files.map((file, i) => {
           return <FileCard file={file} index={i} key={i} />;
@@ -105,6 +125,7 @@ const DownloadFilesInfo = ({ files }) => {
 
 const Dashboard = () => {
   const [entries, setEntries] = useState([]);
+  
 
   const fetchEntries = async () => {
     let response = await fetch("api/dashboard_entries");
@@ -124,7 +145,7 @@ const Dashboard = () => {
     <div className="dashboard-container">
      
       <BytesInfo />
-      <DownloadFilesInfo files={entries} />
+      <DownloadFilesInfo files={entries} fetchEntries={fetchEntries}/>
     </div>
   );
 };

@@ -138,12 +138,11 @@ const FolderView = (props) => {
     }
   };
 
-  const downloadHandler = async() => {
-    console.log(downloadList);
-    alert("download started. see Dashboard for more details","info")
-    deselectAll()
+  const downloadFiles = async(downloadList)=>{
+    let success=true;
+    let count=0;
     let data;
-    await downloadList.map(async(file) => {
+    downloadList.map(async(file) => {
       data = {
         id: file[0],
         name: file[1],
@@ -167,12 +166,23 @@ const FolderView = (props) => {
 
       data = await response.json()
       if(data['status']===false){
+        success=false;
         
-        alert("something went wrong","error")
-        return;
+      }
+      else{
+        count++;
       }
     });
-    alert("download successful","success")
+    return success;
+
+  }
+
+  const downloadHandler = async() => {
+    console.log(downloadList);
+    alert("download started. see Dashboard for more details","info")
+    let downloadFilesList = downloadList
+    deselectAll()
+    let success = await downloadFiles(downloadFilesList); 
   };
 
   const switchFolder = async () => {
