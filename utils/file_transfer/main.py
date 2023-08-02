@@ -757,13 +757,14 @@ class DOWNLOAD_FILE_CLASS:
                 else:
                     RETRY_DOWNLOADS.put((file_path,file_hash,table_name,end_byte-start_byte+1,start_byte,end_byte))
 
+            report_progress()
             threads=[]
             segments=[]
 
             seg_num=0
             for break_num in range(start_byte,end_byte+1,BREAK_DOWNLOAD_WHEN_SIZE_EXCEED):
                 file_dir=TMP_DOWNLOAD_DIR
-                seg_file_path=os.path.join(file_dir,(file_hash+"_"+str(seg_num)+".dat"))
+                seg_file_path=os.path.join(file_dir,(file_hash+"_"+str(seg_num)+".big_dat"))
                 seg_end_byte=min(break_num+BREAK_DOWNLOAD_WHEN_SIZE_EXCEED-1,end_byte)
                 while not LOCKS.access_MAX_CONCURRENT_HIGH_SPEED_DOWNLOAD():
                     time.sleep(2)
@@ -784,13 +785,12 @@ class DOWNLOAD_FILE_CLASS:
                 return
             
             # merge segments
-            with open(file_path,"wb") as f:
+            with open(file_path,"ab") as f:
                 for seg_path in segments:
                     try:
                         with open(seg_path,"rb") as seg_f:
                             f.write(seg_f.read())
-                            if(seg_num>1):
-                                os.remove(seg_path)
+                        os.remove(seg_path)
                     except:
                         RETRY_DOWNLOADS.put((file_path,file_hash,table_name,file_size,start_byte,end_byte))
                         return False
@@ -879,7 +879,7 @@ class DOWNLOAD_FILE_CLASS:
             seg_num=0
             for break_num in range(start_byte,end_byte+1,SLOW_SPEED_BREAK_DOWNLOAD_WHEN_SIZE_EXCEED):
                 file_dir=TMP_DOWNLOAD_DIR
-                seg_file_path=os.path.join(file_dir,(file_hash+"_"+str(seg_num)+".dat"))
+                seg_file_path=os.path.join(file_dir,(file_hash+"_"+str(seg_num)+".small_dat"))
                 seg_end_byte=min(break_num+SLOW_SPEED_BREAK_DOWNLOAD_WHEN_SIZE_EXCEED-1,end_byte)
                 while not LOCKS.access_MAX_CONCURRENT_LOW_SPEED_DOWNLOAD():
                     time.sleep(0.1)
@@ -901,13 +901,12 @@ class DOWNLOAD_FILE_CLASS:
                 return        
             
             # merge segments
-            with open (file_path,"wb") as f:
+            with open (file_path,"ab") as f:
                 for seg_path in segments:
                     try:
                         with open(seg_path,"rb") as seg_f:
                             f.write(seg_f.read()) 
-                            if seg_num>1:
-                                os.remove(seg_path)
+                        os.remove(seg_path)
                     except:
                         RETRY_DOWNLOADS.put((file_path,file_hash,table_name,file_size,start_byte,end_byte))
                         return False
@@ -1199,5 +1198,5 @@ class DOWNLOAD_FILE_CLASS:
         
 if __name__ == '__main__':
     # DOWNLOAD_FILE_CLASS.main("dae9a489-a077-4bba-82de-3f0e6cde0288","79abf0609459c5bf1e6dcb5d124d16e5",table_name="Normal_Content_Main_Folder")
-    DOWNLOAD_FILE_CLASS.main("b43b6944-f193-4f19-8010-6c22dacbf4c9","1a7131b3f5968315254372c86dc30317",table_name="Normal_Content_Main_Folder",name__api="test_name",file_loc__api="data/Normal/Games",api_loc="http://127.0.0.1:8000/api/progress")
+    DOWNLOAD_FILE_CLASS.main("b43b6944-f193-4f19-8010-6c22dacbf4c9","7453adedd3a1c5dded3b51ff7aaf085a",table_name="Normal_Content_Main_Folder",name__api="test_name",file_loc__api="data/Normal/Games",api_loc="http://127.0.0.1:8000/api/progress")
   

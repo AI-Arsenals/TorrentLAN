@@ -8,7 +8,13 @@ def fetch_tmp_size():
     for folder in TMP_FOLDERS:
         if not os.path.exists(folder):
             continue
-        TOTAL_SIZE+=shutil.disk_usage(folder).used
+        total_size = 0
+        for dirpath, dirnames, filenames in os.walk(folder):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                total_size += os.path.getsize(fp)
+        TOTAL_SIZE+=total_size
+
     return TOTAL_SIZE
 
 def delete_tmp():
@@ -19,4 +25,4 @@ def delete_tmp():
 
 if __name__ == "__main__":
     print(fetch_tmp_size())
-    delete_tmp()
+    # delete_tmp()
