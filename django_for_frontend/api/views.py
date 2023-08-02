@@ -267,25 +267,24 @@ def receive_progress(request):
     global download_dick_lock
    
     lazy_file_hash = list(data.keys())[0]
-    progress = float(data[lazy_file_hash])
+    progress=0
 
     download_dick_lock.acquire()
-    try:
+    
+    if(lazy_file_hash in download_dic):
+        progress = float(data[lazy_file_hash])
         prev = download_dic[lazy_file_hash]['percentage']
         progress = clamp(progress,prev,100)
 
         if(progress==100):
             download_dic.pop(lazy_file_hash)
-            re_render=True
+            
         else:
             download_dic[lazy_file_hash]['percentage'] = progress
+
     
-        return JsonResponse({
-            'lazy_file_hash': lazy_file_hash,
-            'updated_progress': download_dic[lazy_file_hash]
-        })
-    except:
-        return HttpResponse("Something went wrong")
+
+    
         # if download_dick_lock is acquired then release
 
     download_dick_lock.release()
