@@ -82,7 +82,7 @@ def live_ip_checker(unique_id, ip):
                     # speed_test_data=return_data["speed_test_data"]
                     transfer_speed = len(data) / (time_taken +1e-10)
                 s.close()
-                return return_data["check_result"],transfer_speed
+                return return_data["check_result"],abs(transfer_speed)
             except ConnectionRefusedError:
                 log(f"The IP {ip} is down", 1)
                 return False
