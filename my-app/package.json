@@ -63,5 +63,6 @@
     "electron-is-dev": "^2.0.0",
     "file-loader": "^6.2.0",
     "wait-on": "^7.0.1"
-  }
+  },
+  "homepage": "build/"
 }

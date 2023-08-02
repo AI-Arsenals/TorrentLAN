@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import CircularProgressBarWithLabel from '../CircularProgressBar/circularProgressBarWithLabel'
 import CircularProgress from '@mui/material/CircularProgress';
 import "../Dashboard/dashboardStyles.css";
 
@@ -19,7 +20,7 @@ const FileCard = ({ file, index }) => {
       <div className="download-upload">download</div>
       <div className="name">{file["name"]}</div>
       <div className="table-name">{file["table_name"]}</div>
-      <div className="percentage">{file["percentage"]}</div>
+      <div className="percentage"><CircularProgressBarWithLabel variant="determinate" value={file["percentage"]}/></div>
       <div className="size">{file["Size"]}</div>
       <div className="location">{file["file_location"]}</div>
     </div>
@@ -33,7 +34,7 @@ const ActiveFileCard = ({ file, index }) => {
       <div className="download-upload">download</div>
       <div className="name">{file["name"]}</div>
       <div className="table-name">{file["table_name"]}</div>
-      <div className="percentage">{file["percentage"]}<CircularProgress variant="determinate" value={file["percentage"]}/></div>
+      <div className="percentage">{file["percentage"]}<CircularProgressBarWithLabel variant="determinate" value={file["percentage"]}/></div>
       <div className="size">{file["Size"]}</div>
       <div className="location">{file["file_location"]}</div>
     </div>
@@ -66,7 +67,7 @@ const FetchRenderActiveFiles = ({fetchEntries}) => {
     let response = await fetch("api/currentDownloads");
     let data = await response.json();
     
-    if(data["re-render"]){
+    if(data["content"].length!=activeFiles.length){
       fetchEntries()
     }
     setActiveFiles(data["content"]);
@@ -144,7 +145,7 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
      
-      <BytesInfo />
+      
       <DownloadFilesInfo files={entries} fetchEntries={fetchEntries}/>
     </div>
   );
