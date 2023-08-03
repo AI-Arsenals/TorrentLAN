@@ -40,16 +40,18 @@ class DebugModule:
         try:
             module_name = script_name
             log_message = f"[{module_name}] [{severity}] {message}"
-
-            if severity_no == 0:
-                self.logger.info(log_message)
-            elif severity_no == 1:
-                self.logger.warning(log_message)
-            elif severity_no == 2:
-                self.logger.error(log_message)
-            else :
-                # unknown severity
-                self.logger
+            
+            LESS_LOGS=json.load(open(CONFIG_FILE))['logs_level_less']
+            if not LESS_LOGS:
+                if severity_no == 0:
+                    self.logger.info(log_message)
+                elif severity_no == 1:
+                    self.logger.warning(log_message)
+                elif severity_no == 2:
+                    self.logger.error(log_message)
+                else :
+                    # unknown severity
+                    self.logger
 
             print(colored(log_message, color))
         except IOError:
@@ -81,7 +83,7 @@ def show_logs():
 def log_location_set():
     if not os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "w") as f:
-            json.dump({"logs_file_path": os.path.join(os.getcwd(),"data", ".logs")}, f)
+            json.dump({"logs_file_path": os.path.join(os.getcwd(),"data", ".logs"),"logs_level_less":True}, f)
 
     LOGS_FILE_PATH = json.load(open(CONFIG_FILE))["logs_file_path"]
     if not os.path.exists(LOGS_FILE_PATH):

@@ -1,5 +1,5 @@
 import importlib.util as import_util
-from utils.identity.main import set_user_name
+from utils.identity.main import set_user_name,show_user_name
 from utils.file_transfer.main import DOWNLOAD_FILE_CLASS
 from utils.db_manage.db_create import main as db_create_main
 from utils.db_manage.symlink_maker import create_symlink
@@ -62,6 +62,18 @@ def set_username(user_name: str) -> bool:
 
     value = set_user_name(user_name)
     return value
+
+def show_username() -> str:
+    """
+    --show username
+    -show username of the user
+
+    Returns:
+        str: username
+    """
+
+    val=show_user_name()
+    return val
 
 
 def download(unique_id: str, lazy_file_hash: str, table_name: str,name__api:str,file_loc__api:str,api_loc=None) -> tuple[str,bool]:

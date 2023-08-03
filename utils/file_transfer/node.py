@@ -19,6 +19,7 @@ from utils.tracker.shared_util.intranet_ips_grabber import get_intranet_ips
 LIVE_IP_CHECK_CONFIG= "configs/live_ip_check_config.json"
 SPEED_TEST_DATA_SIZE = json.load(open(LIVE_IP_CHECK_CONFIG))["speed_test_data_size"]
 FILE_TRANSFER_NODE_CONFIG ="configs/file_transfer_node_config.json"
+LESS_LOGS = json.load(open("configs/log_config.json"))['logs_level_less']
 
 
 HOST = get_intranet_ips()
@@ -46,7 +47,7 @@ def handle_client(conn, addr):
         return
 
     js_data = json.loads(data.decode())
-    log(f"Received data from {addr}: {str(js_data)}",file_name=NODE_file_transfer_log)
+    if not LESS_LOGS:log(f"Received data from {addr}: {str(js_data)}",file_name=NODE_file_transfer_log)
     live_ip_check= js_data.get("live_ip_check", False)
     file_download = js_data.get("file_download", False)
     ping=js_data.get("ping",False)
@@ -73,7 +74,7 @@ def handle_client(conn, addr):
             data_to_send = json.dumps(return_js_data).encode()
             data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
             conn.sendall(data_to_send)
-            log(f"Sent data to {addr}: {str(return_js_data)}",file_name=NODE_file_transfer_log)
+            if not LESS_LOGS:log(f"Sent data to {addr}: {str(return_js_data)}",file_name=NODE_file_transfer_log)
         conn.close()
     
     elif file_download:
@@ -136,10 +137,10 @@ def handle_client(conn, addr):
             
             data_to_send = json.dumps(data_to_send).encode()
             data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
-            log(f"Data Prepared in {time.time()-start_time} seconds",file_name=NODE_file_transfer_log)
+            if not LESS_LOGS:log(f"Data Prepared in {time.time()-start_time} seconds",file_name=NODE_file_transfer_log)
             conn.send(data_to_send)
-            log(f"Data Prepared and sent in {time.time()-start_time} seconds",file_name=NODE_file_transfer_log)
-            log(f"Sent data to {addr}: {str(file_dir)}",file_name=NODE_file_transfer_log)
+            if not LESS_LOGS:log(f"Data Prepared and sent in {time.time()-start_time} seconds",file_name=NODE_file_transfer_log)
+            if not LESS_LOGS:log(f"Sent data to {addr}: {str(file_dir)}",file_name=NODE_file_transfer_log)
         except Exception as e:
             log(f"Error while fetching data from database: {e}",severity_no=1,file_name=NODE_file_transfer_log)
             data_to_send=json.dumps(data_to_send).encode()
