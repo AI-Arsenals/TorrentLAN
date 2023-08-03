@@ -22,6 +22,14 @@ const Profile = () => {
       setCacheSize(data['content'])
     }
 
+    const deleteLogs = async()=>{
+      await fetch('api/cache?action=remove&site=log')
+    }
+
+    const deleteTemp = async()=>{
+      await fetch('api/cache?action=remove&site=temp')
+    }
+
     useEffect(()=>{
       fetchCacheSize()
     },[])
@@ -42,14 +50,14 @@ const Profile = () => {
         <div className="size">
           Logs size: {cacheSize[0]}
         </div>
-        <button className="simpleButton clear">Clear</button>
+        <button className="simpleButton clear" onClick={deleteLogs}>Clear</button>
       </div>
 
       <div className="tempFiles">
         <div className="size">
           Temporary files size: {cacheSize[1]}
         </div>
-        <button className="simpleButton clear">Clear</button>
+        <button className="simpleButton clear" onClick={deleteTemp}>Clear</button>
       </div>
         
     </div>

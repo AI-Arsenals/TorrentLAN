@@ -20,7 +20,7 @@ const FileCard = ({ file, index }) => {
       <div className="download-upload">download</div>
       <div className="name">{file["name"]}</div>
       <div className="table-name">{file["table_name"]}</div>
-      <div className="percentage"><CircularProgressBarWithLabel variant="determinate" value={file["percentage"]}/></div>
+      <div className="percentage"><i className="fa-sharp fa-regular fa-circle-check"></i></div>
       <div className="size">{file["Size"]}</div>
       <div className="location">{file["file_location"]}</div>
     </div>
@@ -61,13 +61,15 @@ const Header = ({ header }) => {
 };
 
 const FetchRenderActiveFiles = ({fetchEntries}) => {
+  // console.log('rendering active files')
   const [activeFiles, setActiveFiles] = useState([]);
-
+  
   const fetchActiveEntries = async () => {
     let response = await fetch("api/currentDownloads");
     let data = await response.json();
-    
-    if(data["content"].length!=activeFiles.length){
+    console.log(data["content"],activeFiles)
+    if(data['render']){
+      console.log('rerendering')
       fetchEntries()
     }
     setActiveFiles(data["content"]);

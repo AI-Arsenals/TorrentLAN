@@ -138,9 +138,8 @@ const FolderView = (props) => {
     }
   };
 
-  const downloadFiles = async(downloadList)=>{
-    let success=true;
-    let count=0;
+  const downloadFiles = (downloadList)=>{
+    
     let data;
     downloadList.map(async(file) => {
       data = {
@@ -156,7 +155,7 @@ const FolderView = (props) => {
         file_location: "temp",
       };
       data = JSON.stringify(data);
-      let response = await fetch("api/download", {
+      fetch("api/download", {
         method: "POST",
         body: data,
         headers: {
@@ -164,16 +163,9 @@ const FolderView = (props) => {
         },
       });
 
-      data = await response.json()
-      if(data['status']===false){
-        success=false;
-        
-      }
-      else{
-        count++;
-      }
+      
     });
-    return success;
+    
 
   }
 
@@ -181,8 +173,8 @@ const FolderView = (props) => {
     console.log(downloadList);
     alert("download started. see Dashboard for more details","info")
     let downloadFilesList = downloadList
-    deselectAll()
-    let success = await downloadFiles(downloadFilesList); 
+    deselectAll();
+    downloadFiles(downloadFilesList); 
   };
 
   const switchFolder = async () => {

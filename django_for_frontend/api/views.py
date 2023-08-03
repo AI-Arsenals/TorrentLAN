@@ -186,6 +186,9 @@ class Upload:
 
 
 class Download:
+
+    
+
     @api_view(['GET'])
     def unique_id_is_up(request):
         unique_ids = request.GET.get('unique_id', None)
@@ -235,9 +238,15 @@ class Download:
         download_dic[data['lazy_file_hash']] = data
         download_dick_lock.release()
         
+        unique_id=None
+        for id in data['unique_id']:
+            content = main.uniqueid_is_up(id)
+            if(content[0]):
+                unique_id=id
+                break
 
-        for d in data:
-            print(d,type(data[d]))
+        if(unique_id==None):
+            return JsonResponse({'status':False})
 
 
         content = main.download(data['unique_id'][0],data['lazy_file_hash'],data['table_name'],data['name'],"data/Normal/Games",'http://127.0.0.1:8000/api/progress')
@@ -257,6 +266,7 @@ class Download:
         data=request.GET
         global download_dic
         global download_dick_lock
+        global re_render
     
         lazy_file_hash = list(data.keys())[0]
         progress=0
@@ -270,6 +280,7 @@ class Download:
 
             if(progress==100):
                 download_dic.pop(lazy_file_hash)
+                re_render=True
                 
             else:
                 download_dic[lazy_file_hash]['percentage'] = progress
@@ -311,9 +322,12 @@ class Dashboard:
     def getCurrentDownloads(request):
         global download_dic
         global download_dick_lock
+        global re_render
         dic={}
         download_dick_lock.acquire()
         dic['content'] = list(download_dic.values())
+        dic['render'] = re_render
+        re_render=False
         download_dick_lock.release()
         
         return JsonResponse(dic)
