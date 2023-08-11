@@ -22,7 +22,7 @@ const RightSideBar = ({ rightCollapseButtonHandler, folder }) => {
   
   const fetchUniqueIdIsUp = async()=>{
       let response,data;
-      response = await fetch(`api/unique_id_is_up?unique_id=${folder[7]}`)
+      response = await fetch(`http://127.0.0.1:8000/api/unique_id_is_up?unique_id=${folder[7]}`)
       data = await response.json()
       setAvailability(data)
   }

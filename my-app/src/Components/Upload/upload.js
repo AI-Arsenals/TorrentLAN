@@ -49,7 +49,7 @@ const Upload = (props) => {
 
       data = { source_path: path, dest_path: destFolder["value"] };
     data = JSON.stringify(data);
-    await fetch("api/upload", {
+    await fetch("http://127.0.0.1:8000/api/upload", {
       method: "POST",
       data: data,
       body: data,

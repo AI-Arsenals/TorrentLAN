@@ -1,41 +1,45 @@
 import { Component } from "react";
+import { Link } from "react-router-dom";
 import "./navbarStyles.css"
-import {menuItems}  from './menuItems';
+import { menuItems } from './menuItems';
 
-class Navbar extends Component{
+class Navbar extends Component {
 
-    
-    render(){
-        return(
+
+    render() {
+        return (
             <>
-            <nav className="Navbar-items" id="Navbar-items">
-                <h3 className="Navbar-logo">
-                    LOGO
-                </h3>
+                <nav className="Navbar-items" id="Navbar-items">
+                    <h3 className="Navbar-logo">
+                        LOGO
+                    </h3>
 
 
-                
-                <ul className="Navbar-menu">
 
-                    {menuItems.map((item,index)=>{
-                        return(
-                            <li key={index}>
-                        
-                        <a className={item.cName} href={item.url}>
+                    <ul className="Navbar-menu">
 
-                        <i className={item.icon}></i>{item.title}
-                        </a>
-                       
-                        
-                        
-                    </li>
-                        )
-                    })}
+                        {menuItems.map((item, index) => {
+                            return (
+                                <li key={index}>
 
-                    
-                </ul>
-            </nav>
-            <div className="hidden"></div>
+
+                                    <Link className={item.cName} to={item.url}>
+
+                                        <i className={item.icon}></i>{item.title}
+                                    </Link>
+
+
+
+
+
+                                </li>
+                            )
+                        })}
+
+
+                    </ul>
+                </nav>
+                <div className="hidden"></div>
             </>
         )
     }

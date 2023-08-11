@@ -65,7 +65,7 @@ const FetchRenderActiveFiles = ({fetchEntries}) => {
   const [activeFiles, setActiveFiles] = useState([]);
   
   const fetchActiveEntries = async () => {
-    let response = await fetch("api/currentDownloads");
+    let response = await fetch("http://127.0.0.1:8000/api/currentDownloads");
     let data = await response.json();
     console.log(data["content"],activeFiles)
     if(data['render']){
@@ -131,7 +131,7 @@ const Dashboard = () => {
   
 
   const fetchEntries = async () => {
-    let response = await fetch("api/dashboard_entries");
+    let response = await fetch("http://127.0.0.1:8000/api/dashboard_entries");
     let data = await response.json();
 
     setEntries(data["content"]);

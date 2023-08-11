@@ -11,23 +11,23 @@ const Profile = () => {
 
     const onSubmit=async()=>{
       
-      let response = await fetch(`api/set_username?username=${username}`)
+      let response = await fetch(`http://127.0.0.1:8000/api/set_username?username=${username}`)
       let data = await response.json()
       console.log(data)
     }
 
     const fetchCacheSize = async()=>{
-      let response = await fetch(`api/cache?action=size`)
+      let response = await fetch(`http://127.0.0.1:8000/api/cache?action=size`)
       let data = await response.json()
       setCacheSize(data['content'])
     }
 
     const deleteLogs = async()=>{
-      await fetch('api/cache?action=remove&site=log')
+      await fetch('http://127.0.0.1:8000/api/cache?action=remove&site=log')
     }
 
     const deleteTemp = async()=>{
-      await fetch('api/cache?action=remove&site=temp')
+      await fetch('http://127.0.0.1:8000/api/cache?action=remove&site=temp')
     }
 
     useEffect(()=>{

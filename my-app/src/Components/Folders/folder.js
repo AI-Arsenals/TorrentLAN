@@ -65,7 +65,7 @@ const FolderView = (props) => {
     let response, data, depth;
 
     if (currFolder.length == 1) {
-      response = await fetch(`api/search_query?name=${currFolder[0]}`);
+      response = await fetch(`http://127.0.0.1:8000/api/search_query?name=${currFolder[0]}`);
       depth = -1;
     } else if (currFolder[0] === -3) {
       depth = 0;
@@ -77,15 +77,15 @@ const FolderView = (props) => {
 
     if (depth === 1 || depth === 0) {
       response = await fetch(
-        `api/getFolderListAtDepth?depth=${depth}&folder=none`
+        `http://127.0.0.1:8000/api/getFolderListAtDepth?depth=${depth}&folder=none`
       );
     } else if (depth === 2) {
       response = await fetch(
-        `api/getFolderListAtDepth?depth=${depth}&folder=${currFolder[1]}`
+        `http://127.0.0.1:8000/api/getFolderListAtDepth?depth=${depth}&folder=${currFolder[1]}`
       );
     } else if (depth > 0) {
       response = await fetch(
-        `api/getFolderList?unique_id=${currFolder[7]}&lazy_file_hash=${currFolder[6]}`
+        `http://127.0.0.1:8000/api/getFolderList?unique_id=${currFolder[7]}&lazy_file_hash=${currFolder[6]}`
       );
     }
     data = await response.json();
@@ -155,7 +155,7 @@ const FolderView = (props) => {
         file_location: "temp",
       };
       data = JSON.stringify(data);
-      fetch("api/download", {
+      fetch("http://127.0.0.1:8000/api/download", {
         method: "POST",
         body: data,
         headers: {
@@ -214,7 +214,7 @@ const FolderView = (props) => {
         setCurrFolder(defualtFolder);
         return;
       } else if (currFolder[0] === -2) {
-        response = await fetch(`api/getFolderListAtDepth?depth=0&folder=none`);
+        response = await fetch(`http://127.0.0.1:8000/api/getFolderListAtDepth?depth=0&folder=none`);
         data = await response.json();
         data = data["folders"][0];
 
@@ -225,7 +225,7 @@ const FolderView = (props) => {
       start = currFolder[5].Path.indexOf("\\");
       end = currFolder[5].Path.lastIndexOf("\\");
       folder = currFolder[5].Path.slice(start + 1, end);
-      response = await fetch(`api/getFolderListAtDepth?depth=1&folder=none`);
+      response = await fetch(`http://127.0.0.1:8000/api/getFolderListAtDepth?depth=1&folder=none`);
       data = await response.json();
       folder = data["folders"].find((item) => {
         return item[1] === folder;
@@ -233,7 +233,7 @@ const FolderView = (props) => {
 
       setCurrFolder(folder);
     } else {
-      response = await fetch(`api/db_search?id=${currFolder[3]}`);
+      response = await fetch(`http://127.0.0.1:8000/api/db_search?id=${currFolder[3]}`);
 
       data = await response.json();
       data = data["content"][0];

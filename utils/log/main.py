@@ -84,7 +84,12 @@ def log_location_set():
     if not os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "w") as f:
             json.dump({"logs_file_path": os.path.join(os.getcwd(),"data", ".logs"),"logs_level_less":True}, f)
-
+    else:
+        with open(CONFIG_FILE) as f:
+            if not "logs_file_path" in json.load(f):
+                with open(CONFIG_FILE, "w") as f:
+                    json.dump({"logs_file_path": os.path.join(os.getcwd(),"data", ".logs"),"logs_level_less":True}, f)
+                    
     LOGS_FILE_PATH = json.load(open(CONFIG_FILE))["logs_file_path"]
     if not os.path.exists(LOGS_FILE_PATH):
         os.makedirs(LOGS_FILE_PATH)

@@ -11,7 +11,9 @@ function createWindow() {
     height: 600,
     webPreferences: {
       nodeIntegration: true,
-      enableRemoteModule: true
+      enableRemoteModule: true,
+      webSecurity: false, // Disable web security (not recommended for production)
+
     },
   });
 

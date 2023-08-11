@@ -46,6 +46,12 @@ module = import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 web_download = getattr(module, "main")
 
+class INIT():
+    def __init__(self):
+        db_create_main()
+        update_server_with_db()
+        update_server_with_ip()
+        log("INIT done", 0)
 
 def set_username(user_name: str) -> bool:
     """
