@@ -37,9 +37,9 @@
     "eject": "react-scripts eject",
     "dev": "concurrently -k \"cross-env BROWSER=none npm start\" \"npm:electron\"",
     "electron": "electron .",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "electron:build": "npm run build && electron-builder -c.extraMetadata.main=build/electron.js"
+    "__package": "electron-forge package",
+    "__make": "electron-forge make",
+    "__electron:build": "npm run build && electron-builder -c.extraMetadata.main=build/electron.js"
   },
   "eslintConfig": {
     "extends": [
@@ -65,7 +65,6 @@
     "cross-env": "^7.0.3",
     "electron": "^25.1.1",
     "electron-builder": "^24.6.3",
-    "electron-prebuilt-compile": "8.2.0",
     "file-loader": "^6.2.0",
     "wait-on": "^7.0.1"
   },

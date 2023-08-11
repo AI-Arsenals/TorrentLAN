@@ -1,0 +1,33 @@
+.main{
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    align-items: flex-start;
+    height: 100%;
+    width: 100%;
+    
+}
+
+.sidebar{
+    
+    padding: 0;
+    height: 100%;
+    width: auto;
+    transition: all 1s ease-in-out;
+    min-width: 40px;
+    position: sticky;
+    
+    
+}
+
+.home-content{
+    flex: 1;
+    padding: 0;
+    height: 100%;
+    overflow-y: auto;
+   
+}
+
+.open{
+    width: 40px;
+}

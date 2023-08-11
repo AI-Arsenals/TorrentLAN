@@ -1,0 +1,15 @@
+.loaderParent{
+    width: 80%;
+    background-color: black;
+    height: 20px;
+    border: 1px solid white;
+    border-radius: 10px;
+}
+
+.loadingBarWrapper{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 0.5em;
+}
