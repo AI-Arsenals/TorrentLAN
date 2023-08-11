@@ -553,10 +553,15 @@ class INSTALL:
             INSTALL.MAC.daemon_networkchange(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
             INSTALL.MAC.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
         
-        if INSTALL.new_install:
-            print("Installation complete !!!!!!!!!")
-        else:
-            print("Updation complete !!!!!!!!!")
+        try:
+            subprocess.run(["pip", "install", "-r", "requirements.txt"], cwd=INSTALL.BASE_DIR, check=True)
+            if INSTALL.new_install:
+                print("Installation complete !!!!!!!!!")
+            else:
+                print("Updation complete !!!!!!!!!")
+        except :
+            print(f"Error installing requirements, please goto {INSTALL.BASE_DIR} and run 'pip install -r requirements.txt' and make sure it executes successfully")
+            
         print("You can now close the window !!")
 
 # Check privileges
