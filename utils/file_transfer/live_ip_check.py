@@ -13,6 +13,7 @@ from utils.log.main import log
 
 LIVE_IP_CHECK_CONFIG= "configs/live_ip_check_config.json"
 SPEED_TEST_DATA_SIZE = json.load(open(LIVE_IP_CHECK_CONFIG))["speed_test_data_size"]
+LESS_LOGS = json.load(open("configs/log_config.json"))['logs_level_less']
 
 NODE_CONFIG='configs/node.json'
 PORT = json.load(open(NODE_CONFIG))["port"]
@@ -24,9 +25,9 @@ def live_ip_checker(unique_id, ip):
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(0.2) 
-            log(f"Connecting to {ip}:{PORT} for live ip check")
+            if not LESS_LOGS:log(f"Connecting to {ip}:{PORT} for live ip check")
             s.connect((ip, PORT))
-            log(f"Connected")
+            if not LESS_LOGS:log(f"Connected")
 
             # Find Ping
             js_data = {}
@@ -82,7 +83,7 @@ def live_ip_checker(unique_id, ip):
                     # speed_test_data=return_data["speed_test_data"]
                     transfer_speed = len(data) / (time_taken +1e-10)
                 s.close()
-                return return_data["check_result"],transfer_speed
+                return return_data["check_result"],abs(transfer_speed)
             except ConnectionRefusedError:
                 log(f"The IP {ip} is down", 1)
                 return False

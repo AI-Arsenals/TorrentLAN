@@ -4,3 +4,4 @@ requests==2.31.0
 SQLAlchemy==2.0.19
 Django==4.2.3
 djangorestframework==3.14.0
+django-cors-headers==4.2.0

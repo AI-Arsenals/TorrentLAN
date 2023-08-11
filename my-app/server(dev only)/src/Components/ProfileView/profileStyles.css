@@ -1,0 +1,62 @@
+
+
+.profile{
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    gap: 1em;
+
+    .username{
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 1em;
+        width: 80%;
+        flex-direction: column;
+        margin-bottom: 30px;
+        #username-field{
+            color: white;
+            padding: 5px;
+            background-color: transparent;
+            border: none;
+            width: 100%;
+        }
+        
+        #username-field:focus{
+            outline: 0;
+            outline-style: none;
+        }
+        .username-form{
+            border: 1px solid white;
+            border-radius: 10px;
+            width: 100%;
+        }
+
+        .username-update{
+            align-self: flex-end;
+        }
+
+        
+    }
+    .logs{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 80%;
+       
+    }
+
+    .tempFiles{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 80%;
+        
+    }
+    }
+
+

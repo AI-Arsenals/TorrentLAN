@@ -17,6 +17,7 @@ get_ip_address=getattr(module, "get_ip_address")
 
 SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
+LESS_LOGS = json.load(open("configs/log_config.json"))['logs_level_less']
 
 PORT = json.load(open(SERVER_CONFIG))["server_port"]
 
@@ -28,7 +29,7 @@ def fetch_unique_id_from_hashes(hashes):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(600)
             s.connect((ip, PORT))
-            log("Connected to server")
+            if not LESS_LOGS:log("Connected to server")
             js_data = {}
             js_data["hash_to_id"] = True
             js_data["hashes"] = hashes

@@ -1,17 +1,13 @@
-import platform
-import sys
-import os
-import subprocess
 import importlib.util as import_util
-from utils.identity.main import set_user_name
+from utils.identity.main import set_user_name,show_user_name
 from utils.file_transfer.main import DOWNLOAD_FILE_CLASS
 from utils.db_manage.db_create import main as db_create_main
 from utils.db_manage.symlink_maker import create_symlink
 from utils.log.main import log
-from utils.dashboard_db.main import fetch_all_entries
-from utils.django_utils.dashboard_cache import cache_fetch,cache_update
+from utils.dashboard_db.main import fetch_all_entries,update_dashboard_db,delete_row_dashboard_db,search_dashboard_db
+# from utils.django_utils.dashboard_cache import cache_fetch,cache_update
 from utils.remover.log import fetch_logs_size,delete_logs
-
+from utils.remover.tmp_downloads import fetch_tmp_size,delete_tmp
 
 
 module_path = "utils/tracker/client(c-s).py"
@@ -50,6 +46,12 @@ module = import_util.module_from_spec(spec)
 spec.loader.exec_module(module)
 web_download = getattr(module, "main")
 
+class INIT():
+    def __init__(self):
+        db_create_main()
+        update_server_with_db()
+        update_server_with_ip()
+        log("INIT done", 0)
 
 def set_username(user_name: str) -> bool:
     """
@@ -66,6 +68,18 @@ def set_username(user_name: str) -> bool:
 
     value = set_user_name(user_name)
     return value
+
+def show_username() -> str:
+    """
+    --show username
+    -show username of the user
+
+    Returns:
+        str: username
+    """
+
+    val=show_user_name()
+    return val
 
 
 def download(unique_id: str, lazy_file_hash: str, table_name: str,name__api:str,file_loc__api:str,api_loc=None) -> tuple[str,bool]:
@@ -244,19 +258,22 @@ def db_search(search_bys: list, searchs: list):
     return results
 
 class dashboard_fxns():
-    def cache_fetcher():
-        """
-        --fetches cache data
-        - returns the cache data
-        - return False if cache is not initialized yet
-        """
-        return cache_fetch()
+    # def cache_fetcher(only_fetch=False):
+    #     """
+    #     --fetches cache data
+    #     - returns the cache data
+    #     - return False if cache is not initialized yet
+
+    #     ----- Please note that if you do cache_fetcher without setting only_fetch=True, then you won't be able to do cache_fetcher from another process until that same process do cache_updater
+    #     """
+    #     return cache_fetch(only_fetch)
     
-    def cache_updater(cache_data):
-        """
-        --updates cache data
-        """
-        return cache_update(cache_data)
+    # def cache_updater(cache_data):
+    #     """
+    #     --updates cache data
+
+    #     """
+    #     return cache_update(cache_data)
     
     def fetch_dashboard_db():
         """
@@ -268,6 +285,63 @@ class dashboard_fxns():
 
         """
         return fetch_all_entries()
+    
+    def updater_dashboard_db(download_or_upload:str, name:str, unique_id:str, lazy_file_hash:str, table_name:str, percentage:str, Size:str, file_location:str):
+        """
+        --updates dashboard db
+        - updates dashboard db with the given data
+        - the format of dashboard db can be checked at utils.dashboard_db.main     
+        -- [need to shift to an inmemory db updation in later versions]
+
+        Arguments:
+            download_or_upload (str) : "Download" or "Upload"
+            name (str) : name of the file
+            unique_id (str) : unique_id of the file
+            lazy_file_hash (str) : lazy_file_hash of the file
+            table_name (str) : table_name of the file
+            percentage (int) : percentage of the file
+            Size (int) : Size of the file
+            file_location (str) : file_location of the file
+
+        """
+        update_dashboard_db(download_or_upload, name, unique_id, lazy_file_hash, table_name, percentage, Size, file_location)
+
+    def delete_row_in_dashboard_db(download_or_upload:str, lazy_file_hash:str):
+        """
+        -- delete a row in dashboard db
+
+        Arguments:
+            download_or_upload (str) : "Download" or "Upload"
+            lazy_file_hash (str) : lazy_file_hash of the file
+        """
+        delete_row_dashboard_db(download_or_upload, lazy_file_hash)
+
+    def search_in_dashboard_db(search_bys:list, searchs:list):
+        """
+        --Searches with AND filter in dashboard db
+        - search_bys is list of columns to search in
+        - searchs is list of values to search for
+        - the value in searchs are the mapping to the columns in search_bys
+        
+        download_or_upload (str) : "Download" or "Upload"
+        name (str) : name of the file
+        unique_id (str) : unique_id of the file
+        lazy_file_hash (str) : lazy_file_hash of the file
+        table_name (str) : table_name of the file
+        percentage (int) : percentage of the file
+        Size (int) : Size of the file
+        file_location (str) : file_location of the file
+        
+
+        Arguments:
+            search_bys (list) : list of columns to search in
+            searchs (list) : list of values to search for
+
+        Returns :
+            list : list of dictionary with keys as the columns and values as the values in the row
+        """
+        search_dashboard_db(search_bys, searchs)
+
 
 class remover():
     def log_size_fetcher()->int:
@@ -284,6 +358,23 @@ class remover():
         --removes logs
         """
         return delete_logs()
+    
+    def tmp_folder_size_fetcher()->int:
+        """
+        --fetches tmp size
+
+        Returns:
+            bool : the tmp size in bytes
+        """
+        return fetch_tmp_size()
+    
+    def tmp_folder_remover():
+        """
+        --removes tmp
+        - please make a note for user that deleting tmp may cause problems with the incomplete downloads
+
+        """
+        return delete_tmp()
 
 if __name__=='__main__':
-    download("b43b6944-f193-4f19-8010-6c22dacbf4c9","7453adedd3a1c5dded3b51ff7aaf085a",table_name="Normal_Content_Main_Folder",name__api="test_name",file_loc__api="data/Normal/Games",api_loc="http://127.0.0.1:8000/recv_download")
+    download("b43b6944-f193-4f19-8010-6c22dacbf4c9","1a7131b3f5968315254372c86dc30317",table_name="Normal_Content_Main_Folder",name__api="test_name",file_loc__api="data/Normal/Games",api_loc="http://127.0.0.1:8000/api/progress")

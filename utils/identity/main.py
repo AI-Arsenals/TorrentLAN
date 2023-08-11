@@ -54,6 +54,15 @@ def set_user_name(user_name=None):
         log(f"Error in setting user name as{user_name}; error=: {e}")
         return False
     
+def show_user_name():
+    try:
+        with open(CONFIG, 'r') as f:
+            data = json.load(f)
+        return data['user_name']
+    except Exception as e:
+        log(f"Error in showing user name; error=: {e}")
+        return ""
+    
 if __name__=='__main__':
     generate_client_id()
     set_user_name()

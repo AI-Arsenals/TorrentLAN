@@ -25,7 +25,7 @@ def search_db(search_bys,searchs):
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(60)
-            log(f"Connecting to {ip} for searching with the filter {zip(search_bys,searchs)}")
+            log(f"Connecting to {ip} for searching with the filter {list(zip(search_bys, searchs))}")
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}
