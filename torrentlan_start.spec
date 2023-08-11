@@ -5,10 +5,10 @@ block_cipher = None
 
 
 a = Analysis(
-    ['install.py'],
+    ['torrentlan_start.py'],
     pathex=[],
     binaries=[],
-    datas=[('configs', 'configs'), ('data', 'data'), ('docs', 'docs'), ('utils', 'utils'), ('requirements.txt', '.'), ('LICENSE', '.'), ('main.py', '.'), ('README.md', '.'), ('torrentlan_launcher', 'torrentlan_launcher'), ('django_for_frontend', 'django_for_frontend'), ('my-app/dist', 'my-app/dist')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -28,7 +28,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='OneExec',
+    name='torrentlan_start',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

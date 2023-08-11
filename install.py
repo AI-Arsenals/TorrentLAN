@@ -528,6 +528,7 @@ class INSTALL:
 
         if platform.system() == "Windows":
             INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~/Documents"), "TorrentLAN")
+            INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start.exe"), os.path.expanduser("~/Desktop"), "TorrentLAN.exe")
             INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
             INSTALL.WINDOWS.daemon_time(os.path.join("utils", "file_transfer", "node.py"),5)
             INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
@@ -535,6 +536,7 @@ class INSTALL:
             INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
         elif platform.system() == "Linux":
             INSTALL.LINUX.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~" + os.getlogin())+"/Documents", "TorrentLAN")
+            INSTALL.LINUX.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start"), os.path.expanduser("~/Desktop"), "TorrentLAN")
             INSTALL.LINUX.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
             # INSTALL.LINUX.daemon_networkchange(os.path.join("utils", "file_transfer", "node.py"))
             INSTALL.LINUX.daemon_time(os.path.join("utils", "file_transfer", "node.py"),5)
@@ -544,6 +546,7 @@ class INSTALL:
             INSTALL.LINUX.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
         elif platform.system() == "Darwin":
             INSTALL.MAC.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~" + os.getlogin())+"/Documents", "TorrentLAN")
+            INSTALL.MAC.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start"), os.path.expanduser("~/Desktop"), "TorrentLAN")
             INSTALL.MAC.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
             INSTALL.MAC.daemon_networkchange(os.path.join("utils", "file_transfer", "node.py"))
             INSTALL.MAC.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))

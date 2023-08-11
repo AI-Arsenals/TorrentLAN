@@ -13,6 +13,7 @@ setup(
         'SQLAlchemy==2.0.19',
         'Django==4.2.3',
         'djangorestframework==3.14.0',
+        'django-cors-headers==3.8.0',
 
         # Add any other project dependencies here
     ],
