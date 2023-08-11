@@ -1,4 +1,5 @@
-import { BrowserRouter as BRouter, Route, Routes } from "react-router-dom";
+import {Route, Routes } from "react-router-dom";
+import {HashRouter as HRouter} from 'react-router-dom'
 import "./App.css";
 import Navbar from "./Components/Navbar/navbar";
 import Home from "./Routes/home";
@@ -15,7 +16,7 @@ function App() {
 
   return (
     <>
-      <BRouter>
+      <HRouter>
       
       <div className="wrapper">
 
@@ -31,7 +32,7 @@ function App() {
             </Routes>
           </div>
       </div>
-      </BRouter>
+      </HRouter>
     </>
   );
 }

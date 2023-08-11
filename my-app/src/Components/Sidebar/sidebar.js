@@ -1,4 +1,5 @@
 import React from "react";
+import {NavLink} from 'react-router-dom'
 import "../Sidebar/sidebarStyles.css";
 import sidebarItems from "../Sidebar/sideBarItems";
 
@@ -15,7 +16,8 @@ const Sidebar = ({ collapseButtonHandler }) => {
           </div>
         </li>
         {sidebarItems.map((item, index) => (
-          <li
+          <li>
+          {/* <li
             key={index}
             className="sidebar-items"
             id={window.location.pathname === item.url ? "active" : "inactive"}
@@ -27,7 +29,20 @@ const Sidebar = ({ collapseButtonHandler }) => {
               <i className={item.icon}></i>
             </div>
             <div className="item-title">{item.title}</div>
-          </li>
+          </li> */}
+
+          <NavLink
+          key={index}
+          className="sidebar-items"
+          activeClassName = "sidebar-items"
+          to={item.url}
+        >
+          <div className="icon">
+            <i className={item.icon}></i>
+          </div>
+          <div className="item-title">{item.title}</div>
+        </NavLink>
+        </li>
         ))}
       </ul>
     </div>
