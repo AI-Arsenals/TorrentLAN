@@ -88,7 +88,13 @@ const RightSideBar = ({ rightCollapseButtonHandler, folder }) => {
 
         
         {(folder[0]>0) && <AvailabilityInfoContainer/>}
+
       </div>
+      <div className="message">
+          <p>
+            Use the right-click of the mouse to download files/folders
+          </p>
+        </div>
     </div>
   );
 };

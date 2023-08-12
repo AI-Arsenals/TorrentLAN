@@ -79,20 +79,4 @@
       }
     }
   }
-
-  .availability{
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    
-    padding-top: 20px;
-    
-    .availability-info{
-      flex-wrap: wrap;
-        display: flex;
-        justify-content: space-between;
-        padding-top: 10px;
-    }
-  }
 }

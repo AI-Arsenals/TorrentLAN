@@ -17,7 +17,7 @@ pyinstaller --onefile \
             --add-data "README.md:." \
             --add-data "torrentlan_launcher;torrentlan_launcher" `
             --add-data "django_for_frontend:django_for_frontend" \
-            --add-data "my-app/dist":my-app/dist \
+            --add-data "my-app/client/dist":my-app/client/dist \
             install.py
 ```
 
@@ -38,7 +38,7 @@ pyinstaller --onefile `
             --add-data "README.md;." `
             --add-data "torrentlan_launcher;torrentlan_launcher" `
             --add-data "django_for_frontend;django_for_frontend" `
-            --add-data "my-app/dist;my-app/dist" `
+            --add-data "my-app/client/dist;my-app/client/dist" `
             install.py
 ```
 

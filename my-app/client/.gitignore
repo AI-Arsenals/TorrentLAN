@@ -27,3 +27,5 @@ my-app-win32-x64/*
 src/Components_saved/*
 dist/*
 pack/*
+
+node_modules - Shortcut.lnk
