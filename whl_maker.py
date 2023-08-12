@@ -7,7 +7,7 @@ setup(
     author_email=['gupta.99@iitj.ac.in', 'sharma.131@iitj.ac.in'],
     packages=find_packages(),
     install_requires=[
-        'netifaces==0.11.0',
+        'psutil==5.9.5',
         'termcolor==2.3.0',
         'requests==2.31.0',
         'SQLAlchemy==2.0.19',

@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-TORRENT_LAN_DIR=os.getcwd()
+TORRENT_LAN_DIR=os.path.abspath(os.getcwd())
 
 if not os.path.basename(os.path.dirname(__file__))=="TorrentLAN":
     if os.name == 'nt':
@@ -11,20 +11,26 @@ if not os.path.basename(os.path.dirname(__file__))=="TorrentLAN":
     elif os.name=='mac':
         TORRENT_LAN_DIR=os.path.expanduser("~" + os.getlogin())
 
-print(f"Starting Django and Electron in {TORRENT_LAN_DIR}")
+print(f"TorrentLAN basedir is at {TORRENT_LAN_DIR}")
 
 # Start the Django server
-django_process = subprocess.Popen(["python", "./django_for_frontend/manage.py", "runserver"],cwd=TORRENT_LAN_DIR)
+print(f"Starting django at {os.path.join(TORRENT_LAN_DIR,'django_for_frontend/manage.py')}")
+django_python=os.path.join(TORRENT_LAN_DIR,'django_for_frontend/manage.py')
+django_process = subprocess.Popen(["python", django_python, "runserver"],cwd=TORRENT_LAN_DIR)
 
+# Start the Electron
 if os.name == 'nt':
-    # Start the Electron
-    frontend_process = subprocess.Popen(["../my-app/dist/win-unpacked/my-app.exe"],cwd=TORRENT_LAN_DIR)
+    print(f"Starting electron at {os.path.join(TORRENT_LAN_DIR,'my-app','dist','win-unpacked','my-app.exe')}")
+    electron_executable = os.path.join(TORRENT_LAN_DIR, 'my-app', 'dist', 'win-unpacked', 'my-app.exe')
+    frontend_process = subprocess.Popen([electron_executable], cwd=TORRENT_LAN_DIR)
 elif os.name=='posix':
-    # Start the Electron
-    frontend_process = subprocess.Popen(["../my-app/dist/linux-unpacked/my-app"],cwd=TORRENT_LAN_DIR)
+    print(f"Starting electron at {os.path.join(TORRENT_LAN_DIR,'my-app','dist','linux-unpacked','my-app')}")
+    electron_executable = os.path.join(TORRENT_LAN_DIR, 'my-app', 'dist', 'linux-unpacked', 'my-app')
+    frontend_process = subprocess.Popen([electron_executable], cwd=TORRENT_LAN_DIR)
 elif os.name=='mac':
-    # Start the Electron
-    frontend_process = subprocess.Popen(["../my-app/dist/mac-unpacked/my-app.app"],cwd=TORRENT_LAN_DIR)
+    print(f"Starting electron at {os.path.join(TORRENT_LAN_DIR,'my-app','dist','mac-unpacked','my-app.app')}")
+    electron_executable = os.path.join(TORRENT_LAN_DIR, 'my-app', 'dist', 'mac-unpacked', 'my-app.app')
+    frontend_process = subprocess.Popen([electron_executable], cwd=TORRENT_LAN_DIR)
 
 
 # Wait for processes to complete
