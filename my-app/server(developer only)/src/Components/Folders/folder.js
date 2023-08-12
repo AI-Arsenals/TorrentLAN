@@ -5,6 +5,8 @@ import { useEffect } from "react";
 import RightSideBar from "../RightSideBar/rightSideBar";
 import FolderItem from "./folder-item";
 import Snackbar from "../SnackBars/Snackbars";
+const dns = require('dns');
+
 const FolderView = (props) => {
   const [rightIsClosed, setRightIsClosed] = useState(false);
 
@@ -61,11 +63,30 @@ const FolderView = (props) => {
     setContentListPrimitive(data);
   };
 
+
+
+  const fetchIpAddress = async () => {
+    try {
+      const addresses = await dns.promises.resolve('http://home.iitj.ac.in');
+      console.log('addresses: ', addresses);
+      if (addresses && addresses.length > 0) {
+        return addresses[0]; // Return the first IP address
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error("Error getting IP address:", error);
+      return null;
+    }
+  };
+  
+
   const getFolderList = async () => {
     let response, data, depth;
 
+    const ip = await fetchIpAddress();
     if (currFolder.length === 1) {
-      response = await fetch(`http://home.iitj.ac.in:8000/api/search_query?name=${currFolder[0]}`);
+      response = await fetch(`http://${ip}:8000/api/search_query?name=${currFolder[0]}`);
       depth = -1;
     } else if (currFolder[0] === -3) {
       depth = 0;
@@ -77,15 +98,15 @@ const FolderView = (props) => {
 
     if (depth === 1 || depth === 0) {
       response = await fetch(
-        `http://home.iitj.ac.in:8000/api/getFolderListAtDepth?depth=${depth}&folder=none`
+        `http://${ip}:8000/api/getFolderListAtDepth?depth=${depth}&folder=none`
       );
     } else if (depth === 2) {
       response = await fetch(
-        `http://home.iitj.ac.in:8000/api/getFolderListAtDepth?depth=${depth}&folder=${currFolder[1]}`
+        `http://${ip}:8000/api/getFolderListAtDepth?depth=${depth}&folder=${currFolder[1]}`
       );
     } else if (depth > 0) {
       response = await fetch(
-        `http://home.iitj.ac.in:8000/api/getFolderList?unique_id=${currFolder[7]}&lazy_file_hash=${currFolder[6]}`
+        `http://${ip}:8000/api/getFolderList?unique_id=${currFolder[7]}&lazy_file_hash=${currFolder[6]}`
       );
     }
     data = await response.json();
@@ -147,19 +168,22 @@ const FolderView = (props) => {
         table_name: "Normal_Content_Main_Folder",
         file_location: "temp",
       };
-      data = JSON.stringify(data);
-      fetch("http://home.iitj.ac.in:8000/api/download", {
+      const ip = await fetchIpAddress();
+      const requestOptions = {
         method: "POST",
-        body: data,
+        body: JSON.stringify(data),
         headers: {
           "Content-type": "application/json; charset=UTF-8",
         },
-      });
-
-      
-    });
-    
-
+      };
+  
+      try {
+        const response = await fetch(`http://${ip}:8000/api/download`, requestOptions);
+        // Handle response if needed
+      } catch (error) {
+        console.error("Error downloading file:", error);
+      }
+    });  
   }
 
   const downloadHandler = async() => {
@@ -194,6 +218,7 @@ const FolderView = (props) => {
   }, [currFolder, downloadList, highlightedFolder]);
 
   const backButtonHandler = async () => {
+    const ip = await fetchIpAddress();
     deselectHighlighted();
     let response, data;
 
@@ -207,7 +232,7 @@ const FolderView = (props) => {
         setCurrFolder(defualtFolder);
         return;
       } else if (currFolder[0] === -2) {
-        response = await fetch(`http://home.iitj.ac.in:8000/api/getFolderListAtDepth?depth=0&folder=none`);
+        response = await fetch(`http://${ip}:8000/api/getFolderListAtDepth?depth=0&folder=none`);
         data = await response.json();
         data = data["folders"][0];
 
@@ -218,7 +243,7 @@ const FolderView = (props) => {
       start = currFolder[5].Path.indexOf("\\");
       end = currFolder[5].Path.lastIndexOf("\\");
       folder = currFolder[5].Path.slice(start + 1, end);
-      response = await fetch(`http://home.iitj.ac.in:8000/api/getFolderListAtDepth?depth=1&folder=none`);
+      response = await fetch(`http://${ip}:8000/api/getFolderListAtDepth?depth=1&folder=none`);
       data = await response.json();
       folder = data["folders"].find((item) => {
         return item[1] === folder;
@@ -226,7 +251,7 @@ const FolderView = (props) => {
 
       setCurrFolder(folder);
     } else {
-      response = await fetch(`http://home.iitj.ac.in:8000/api/db_search?id=${currFolder[3]}`);
+      response = await fetch(`http://${ip}:8000/api/db_search?id=${currFolder[3]}`);
 
       data = await response.json();
       data = data["content"][0];
