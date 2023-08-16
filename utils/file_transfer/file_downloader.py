@@ -6,16 +6,18 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 from utils.log.main import log
 
-PORT = 8890
+NODE_CONFIG='configs/node.json'
+PORT = json.load(open(NODE_CONFIG))["port"]
+LESS_LOGS = json.load(open("configs/log_config.json"))['logs_level_less']
 
 def file_download(ip, hash,table_name,start_byte=None,end_byte=None):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            log(f"Connecting to {ip}:{PORT} for file_download")
-            s.settimeout(120)
+            if not LESS_LOGS:log(f"Connecting to {ip}:{PORT} for file_download")
+            s.settimeout(300)
             s.connect((ip, PORT))
-            log(f"Connected")
+            if not LESS_LOGS:log(f"Connected")
             js_data = {}
             js_data["file_download"] = True
             js_data["table_name"] = table_name

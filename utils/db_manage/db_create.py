@@ -36,12 +36,19 @@ def hash_generator(file_path):
     return hasher.hexdigest()
 
 
-def get_metadata(file_path):
+def get_metadata(file_path,symlinked=False,symlink_base_path=None):
     metadata = {}
+    # check if symlinked
+    metadata['Path'] = file_path
+    if symlinked:
+        if symlink_base_path!=file_path:
+            after_symlink_path=os.path.relpath(os.path.realpath(file_path),os.path.realpath(symlink_base_path))
+            metadata['Path']=os.path.join(symlink_base_path,after_symlink_path)
+        file_path=os.path.realpath(file_path)
+    
     file_stat = os.stat(file_path)
 
     # Non-sensitive metadata
-    metadata['Path'] = file_path
     metadata['Size'] = file_stat.st_size
     metadata['Last Modified'] = time.ctime(file_stat.st_mtime)
     metadata['Created'] = time.ctime(file_stat.st_ctime)
@@ -117,6 +124,12 @@ def create_table(conn, table_name):
 
     create_index_query = '''
         CREATE INDEX IF NOT EXISTS idx_lazy_file_hash ON {table_name} (lazy_file_check_hash);
+    '''
+    create_index_query = create_index_query.format(table_name=table_name)
+    conn.execute(create_index_query)
+
+    create_index_query = '''
+        CREATE INDEX IF NOT EXISTS idx_lazy_file_hash ON {table_name} (name);
     '''
     create_index_query = create_index_query.format(table_name=table_name)
     conn.execute(create_index_query)
@@ -204,15 +217,27 @@ def update_parent_at_id(conn, table_name, insert_id, parent_id):
     conn.commit()
     cursor.close()
 
-def process_folder(conn, table_name, path, parent_id=None):
+def process_folder(conn, table_name, path, parent_id=None,symlinked=False,symlink_base_path=None):
     if os.path.isfile(path):
         return []
     child_ids = []
     SIZE=0
+
+    # change path via symlink_base made in data folder
+    if not symlinked and os.path.islink(path):
+        symlinked=True
+        symlink_base_path = path
+
     for item in os.listdir(path):
         item_path = os.path.join(path, item)
+
+        # check if symlink is broken
+        if(not os.path.exists(os.path.realpath(item_path))):
+            continue
+
+
         is_file = os.path.isfile(item_path)
-        metadata = get_metadata(item_path)
+        metadata = get_metadata(item_path,symlinked,symlink_base_path)
 
         if is_file:
             lazy_file_hash = lazy_file_check_hash(item_path, metadata['Last Modified'])
@@ -244,7 +269,7 @@ def process_folder(conn, table_name, path, parent_id=None):
             else:
                 item_id = insert_item(conn, table_name, item, 0, parent_id, None, None, lazy_file_hash, UNIQUE_ID, "")
                 child_ids.append(item_id)
-            child_id_vals,child_size = process_folder(conn, table_name, item_path, item_id)
+            child_id_vals,child_size = process_folder(conn, table_name, item_path, item_id,symlinked,symlink_base_path)
             SIZE+=child_size
             if len(child_id_vals) > 0:
                 metadata['Size'] += child_size

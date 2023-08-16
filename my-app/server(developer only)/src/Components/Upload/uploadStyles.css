@@ -1,0 +1,36 @@
+.upload-container{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.simpleButton{
+    border: 1px solid white;
+    color: white;
+    border-radius: 10px;
+    padding: 5px 10px;
+    
+}
+
+.simpleButton:disabled{
+    color: black;
+    border: 1px solid black;
+    cursor: default;
+}
+
+.simpleButton:hover:enabled{
+    background-color: white;
+    color: black;
+    font-weight: bold;
+}
+
+.dropdown{
+    width: 80%;
+    display: flex;
+    justify-content: right;
+    align-items: center;
+
+}

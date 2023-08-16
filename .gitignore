@@ -2,5 +2,11 @@
 Pipfile
 torrentlan/*
 data/.logs/*
-configs/log_config.json
+configs/identity.json
+configs/file_transfer_node_config.json
 *.pyc
+dist/*
+data/.db/*.db
+!dist/*.whl
+build/*
+test_folders/

@@ -7,6 +7,8 @@ import base64
 import sqlite3
 import sys
 import select
+import psutil
+from sqlalchemy import text as sanitize
 
 
 sys.path.append(os.path.abspath(os.path.join(
@@ -16,10 +18,13 @@ from utils.tracker.shared_util.intranet_ips_grabber import get_intranet_ips
 
 LIVE_IP_CHECK_CONFIG= "configs/live_ip_check_config.json"
 SPEED_TEST_DATA_SIZE = json.load(open(LIVE_IP_CHECK_CONFIG))["speed_test_data_size"]
+FILE_TRANSFER_NODE_CONFIG ="configs/file_transfer_node_config.json"
+LESS_LOGS = json.load(open("configs/log_config.json"))['logs_level_less']
 
 
 HOST = get_intranet_ips()
-PORT = 8890
+NODE_CONFIG='configs/node.json'
+PORT = json.load(open(NODE_CONFIG))["port"]
 
 DATABASE_DIR = "data/.db"
 NODE_file_transfer_log=".node_file_transfer_log"
@@ -28,6 +33,7 @@ CONFIG_IDENTITY = "configs/identity.json"
 OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 
 HASH_TO_FILE_DIR_CACHE={}
+HASH_TO_FILE_DIR_CACHE_LOCK=threading.Lock()
 
 def handle_client(conn, addr):
     log(f"Connection from {addr}",file_name=NODE_file_transfer_log)
@@ -41,7 +47,7 @@ def handle_client(conn, addr):
         return
 
     js_data = json.loads(data.decode())
-    log(f"Received data from {addr}: {str(js_data)}",file_name=NODE_file_transfer_log)
+    if not LESS_LOGS:log(f"Received data from {addr}: {str(js_data)}",file_name=NODE_file_transfer_log)
     live_ip_check= js_data.get("live_ip_check", False)
     file_download = js_data.get("file_download", False)
     ping=js_data.get("ping",False)
@@ -68,7 +74,7 @@ def handle_client(conn, addr):
             data_to_send = json.dumps(return_js_data).encode()
             data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
             conn.sendall(data_to_send)
-            log(f"Sent data to {addr}: {str(return_js_data)}",file_name=NODE_file_transfer_log)
+            if not LESS_LOGS:log(f"Sent data to {addr}: {str(return_js_data)}",file_name=NODE_file_transfer_log)
         conn.close()
     
     elif file_download:
@@ -87,20 +93,28 @@ def handle_client(conn, addr):
             if hash in HASH_TO_FILE_DIR_CACHE:
                 hash_in_cache=True
             if not hash_in_cache:
-                # Find file path in file_tree.db
-                with open(CONFIG_FOLDER_LOCATION) as f:
-                    data = json.load(f)
+                with open(CONFIG_FOLDER_LOCATION,"r") as f:
+                    table_names = json.load(f).keys()
+                if table_name not in table_names:
+                    log(f"Table name {table_name} not found in folder_locations.json",severity_no=1,file_name=NODE_file_transfer_log)
+                    data_to_send = json.dumps(data_to_send).encode()
+                    data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
+                    conn.send(data_to_send)
+                    conn.close()
+                    return
                 db_con=sqlite3.connect(os.path.join(DATABASE_DIR,"file_tree.db"))
                 cursor=db_con.cursor()
-                cursor.execute(f"SELECT * FROM {table_name} WHERE hash = '{hash}'")
+                cursor.execute(f"SELECT * FROM {table_name} WHERE hash = '{sanitize(hash)}'")
                 data=cursor.fetchone()
                 is_file=data[2]
                 if data and is_file:
                     meta_data=json.loads(data[5])
                     file_dir=meta_data["Path"]
                     found_in_db=True
+                    HASH_TO_FILE_DIR_CACHE_LOCK.acquire()
                     HASH_TO_FILE_DIR_CACHE[hash]=file_dir
-                    if start_byte and end_byte:
+                    HASH_TO_FILE_DIR_CACHE_LOCK.release()
+                    if start_byte!=None and end_byte!=None:
                         with open(file_dir, "rb") as file:
                             file.seek(start_byte)
                             data = file.read(end_byte - start_byte + 1)
@@ -111,7 +125,7 @@ def handle_client(conn, addr):
                     data_to_send["file_data"] = b64_data.decode()
             elif found_in_db or hash_in_cache:
                 file_dir=HASH_TO_FILE_DIR_CACHE[hash]
-                if start_byte and end_byte:
+                if start_byte!=None and end_byte!=None:
                         with open(file_dir, "rb") as file:
                             file.seek(start_byte)
                             data = file.read(end_byte - start_byte + 1)
@@ -123,10 +137,10 @@ def handle_client(conn, addr):
             
             data_to_send = json.dumps(data_to_send).encode()
             data_to_send += b"<7a98966fd8ec965d43c9d7d9879e01570b3079cacf9de1735c7f2d511a62061f>"
-            log(f"Data Prepared in {time.time()-start_time} seconds",file_name=NODE_file_transfer_log)
+            if not LESS_LOGS:log(f"Data Prepared in {time.time()-start_time} seconds",file_name=NODE_file_transfer_log)
             conn.send(data_to_send)
-            log(f"Data Prepared and sent in {time.time()-start_time} seconds",file_name=NODE_file_transfer_log)
-            log(f"Sent data to {addr}: {str(file_dir)}",file_name=NODE_file_transfer_log)
+            if not LESS_LOGS:log(f"Data Prepared and sent in {time.time()-start_time} seconds",file_name=NODE_file_transfer_log)
+            if not LESS_LOGS:log(f"Sent data to {addr}: {str(file_dir)}",file_name=NODE_file_transfer_log)
         except Exception as e:
             log(f"Error while fetching data from database: {e}",severity_no=1,file_name=NODE_file_transfer_log)
             data_to_send=json.dumps(data_to_send).encode()
@@ -138,6 +152,35 @@ def handle_client(conn, addr):
 
 
 def start_server():
+    current_pid=os.getpid()
+
+    if os.path.exists(FILE_TRANSFER_NODE_CONFIG):
+        last_hosts=json.loads(open(FILE_TRANSFER_NODE_CONFIG).read())["last_hosts"]
+        if last_hosts==HOST:
+            EXISTING_PROCESS=False
+            for proc in psutil.process_iter():
+                try:
+                    if (proc.pid != current_pid) and ((("python" in proc.name()))or("python3" in proc.name())) and "utils/file_transfer/node.py" in proc.cmdline():
+                        EXISTING_PROCESS=True
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    pass
+            if EXISTING_PROCESS:
+                log("Server already running with no network adapter ip changes")
+                return
+        else:
+            open(FILE_TRANSFER_NODE_CONFIG,"w").write(json.dumps({"last_hosts":HOST}))
+
+    if not os.path.exists(FILE_TRANSFER_NODE_CONFIG):
+        open(FILE_TRANSFER_NODE_CONFIG,"w").write(json.dumps({"last_hosts":HOST}))
+
+    # Check if the node is already running and terminate it
+    for proc in psutil.process_iter():
+        try:
+            if (proc.pid != current_pid) and (("python" in proc.name())or("python3" in proc.name())) and "utils/file_transfer/node.py" in proc.cmdline():
+                proc.terminate()
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+
     sockets = []
     for host in HOST:
         try:

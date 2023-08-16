@@ -37,7 +37,7 @@ def subdb_maker(unique_id, lazy_file_hash, subdb_filename):
     with open(CONFIG_FOLDER_LOCATION) as f:
         data = json.load(f)
 
-    if os.path.exists(os.path.join(SUB_DB_PATH, subdb_filename)):
+    if os.path.exists(os.path.join(SUB_DB_PATH, subdb_filename))  or unique_id=="file_tree":
         return True
     for db in os.listdir(DATABASE_DIR):
         if (not os.path.isfile(os.path.join(DATABASE_DIR, db))):
@@ -54,11 +54,11 @@ def subdb_maker(unique_id, lazy_file_hash, subdb_filename):
                 '''.format(table_name=table_name)
 
                 cursor.execute(query, (lazy_file_hash,))
-                result = cursor.fetchall()
+                result = cursor.fetchone()
 
                 if result:
-                    parent_id = result[0][0]
-                    hash_value = result[0][8]
+                    parent_id = result[0]
+                    hash_value = result[8]
                     log(f"Creating subdb of {table_name} of row with lazy_file_hash {lazy_file_hash} and parent_id {parent_id} and hash {hash_value}")
                     conn_subdb = sqlite3.connect(
                         os.path.join(SUB_DB_PATH, subdb_filename))
@@ -66,13 +66,11 @@ def subdb_maker(unique_id, lazy_file_hash, subdb_filename):
                     cursor_subdb = conn_subdb.cursor()
 
                     def tree_iterator(id):
-                        cursor.execute(
-                            f"SELECT child_id FROM {table_name} WHERE id = ?;", (id,))
-
-                        # add this row to subdb
                         row_query = f"SELECT * FROM {table_name} WHERE id = ?;"
                         cursor.execute(row_query, (id,))
                         row_data = cursor.fetchone()
+
+                        # add this row to subdb
                         insert_query = f"""INSERT INTO {"subdb"} (id,name, is_file, parent_id, child_id, metadata, lazy_file_check_hash, unique_id, hash)
         VALUES (?,?, ?, ?, ?, ?, ?, ?, ?);"""
                         cursor_subdb.execute(insert_query, row_data)

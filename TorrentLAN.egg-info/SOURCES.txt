@@ -1,0 +1,8 @@
+LICENSE
+README.md
+whl_maker.py
+TorrentLAN.egg-info/PKG-INFO
+TorrentLAN.egg-info/SOURCES.txt
+TorrentLAN.egg-info/dependency_links.txt
+TorrentLAN.egg-info/requires.txt
+TorrentLAN.egg-info/top_level.txt

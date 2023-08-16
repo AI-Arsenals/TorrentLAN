@@ -1,0 +1,37 @@
+import React from "react";
+import FolderIcon from '../../assets/icons/folder-icon.png'
+import FileIcon from '../../assets/icons/file-icon.png'
+
+const FolderItem = (props) => {
+
+  
+
+
+  const handleLeftClick = async (event) =>{
+    await props.handleClick()
+    
+
+    if(!event.target.classList.contains("highlighted")){
+      event.target.classList.add("highlighted")
+    }
+  
+      
+    
+  } 
+
+  
+
+    
+  return (
+    <div className="folder-item" >
+      <button className="folder-div" id={props.path} onClick={(event)=> {handleLeftClick(event)}}>
+
+        <img src={props.type==="folder"?FolderIcon:FileIcon} alt="folder-icon" className="folder-icon" />
+      </button>
+     
+      <span className="folder-name">{props.name}</span> 
+    </div>
+  );
+};
+
+export default FolderItem;

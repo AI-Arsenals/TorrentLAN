@@ -6,7 +6,7 @@ import socket
 import os
 import json
 import sys
-import netifaces
+import psutil
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 from utils.log.main import log
@@ -17,13 +17,14 @@ OWN_UNIQUE_ID = json.load(open(CONFIG_IDENTITY))["client_id"]
 SERVER_CONFIG="configs/server.json"
 SERVER_ADDR=json.load(open(SERVER_CONFIG))["server_addr"]
 
-PORT = json.load(open(SERVER_CONFIG))["server_addr"]
+PORT = json.load(open(SERVER_CONFIG))["server_port"]
 
 def update_server(unique_id, ip,local_conn_ip,netmask):
     try:
         # Connect to server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             log(f"Connecting to server at {ip}")
+            s.settimeout(5)
             s.connect((ip, PORT))
             log("Connected to server")
             js_data = {}
@@ -39,13 +40,19 @@ def update_server(unique_id, ip,local_conn_ip,netmask):
     except ConnectionRefusedError:
         log("Server is down",2)
         return False
+    except socket.timeout:
+        log("Connection timed out",2)
+        log("Server is down",2)
+        return False
 
 def get_ip_address(address):
     try:
         ip_address = socket.gethostbyname(address)
         return ip_address
     except socket.gaierror:
-        return None
+        log(f"Either server is down, or we are unable to connect to server at {address}",2)
+        log(f"By default connecting to local host instead of server at {address}",1)
+        return "127.0.0.1"
 
 def get_my_connect_ip(conn_address):
     try:
@@ -85,17 +92,11 @@ def update(Force_update=False):
                 log("Already Upto date")
 
 def get_netmask(ip_address):
-    # Get the network interfaces
-    interfaces = netifaces.interfaces()
-
-    # Iterate over the network interfaces and find the one that matches the provided IP address
-    for interface in interfaces:
-        addresses = netifaces.ifaddresses(interface)
-        if socket.AF_INET in addresses:
-            for address in addresses[socket.AF_INET]:
-                if 'addr' in address and address['addr'] == ip_address:
-                    netmask = address.get('netmask')
-                    return netmask
+    # Iterate through all network interfaces
+    for interface, addrs in psutil.net_if_addrs().items():
+        for addr in addrs:
+            if addr.family == socket.AF_INET and addr.address == ip_address:
+                return addr.netmask
 
     return None
 

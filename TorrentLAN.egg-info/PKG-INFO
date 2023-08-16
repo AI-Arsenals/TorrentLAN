@@ -1,0 +1,9 @@
+Metadata-Version: 2.1
+Name: TorrentLAN
+Version: 1.0.0
+Author: ['Prakhar Gupta', 'Sameer Sharma']
+Author-email: ['gupta.99@iitj.ac.in', 'sharma.131@iitj.ac.in']
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+License-File: LICENSE
