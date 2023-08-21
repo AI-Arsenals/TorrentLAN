@@ -4,6 +4,8 @@ import os
 import sys
 import shutil
 import platform
+import time
+import json
 
 
 class INSTALL:
@@ -54,7 +56,7 @@ class INSTALL:
                 return
             # run the file once
             BASE_DIR=INSTALL.BASE_DIR
-            command=INSTALL.py + " " + file_loc
+            command="pythonw " + file_loc
             # Run the command in a new process with a new console window
             if platform.system=='Linux':
                 subprocess.run("sudo -u "+INSTALL.user+" "+command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -70,6 +72,10 @@ class INSTALL:
                 print("Installing TorrentLAN ...")
                 print(f"Copying files to {BASE_DIR} from {TEMP_DIR}")
                 shutil.copytree(TEMP_DIR, BASE_DIR)
+
+                js_data={"BASE_DIR":BASE_DIR}
+                with open(os.path.join(BASE_DIR,"configs/base_dir.json"), 'w') as f:
+                    json.dump(js_data, f)
             else:   
                 print("Updating TorrentLAN ...")
                 print(f"Copying files to {BASE_DIR} from {TEMP_DIR}")
@@ -104,6 +110,11 @@ class INSTALL:
                             os.chmod(file_path, 0o777)
                 recursive_chmod(BASE_DIR)
                 os.chmod(BASE_DIR, 0o777)
+
+                js_data={"BASE_DIR":BASE_DIR}
+                with open(os.path.join(BASE_DIR,"configs/base_dir.json"), 'w') as f:
+                    json.dump(js_data, f)
+                os.chmod(os.path.join(BASE_DIR,"configs/base_dir.json"), 0o777)
             print(f"Copying complete")
 
     class WINDOWS:
@@ -114,7 +125,7 @@ class INSTALL:
             import win32com.client
             
             shell = win32com.client.Dispatch("WScript.Shell")
-            shortcut = shell.CreateShortCut(os.path.join(destination_loc, name + ".lnk"))
+            shortcut = shell.CreateShortCut(os.path.join(destination_loc, name+".lnk"))
             shortcut.Targetpath = source_loc
             shortcut.save()
 
@@ -524,7 +535,9 @@ class INSTALL:
     def main():
         INSTALL.ALL_PLATFORMS.copy_to_program_files()
         INSTALL.ALL_PLATFORMS.run_once("utils/identity/main.py")
+        time.sleep(1)
         INSTALL.ALL_PLATFORMS.run_once("utils/tracker/client_ip_reg(c-s).py")
+        time.sleep(1)
 
         if platform.system() == "Windows":
             INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~/Documents"), "TorrentLAN")
@@ -563,6 +576,17 @@ class INSTALL:
             print(f"Error installing requirements, please goto {INSTALL.BASE_DIR} and run 'pip install -r requirements.txt' and make sure it executes successfully")
             
         print("You can now close the window !!")
+        print("Data of TorrentLAN is stored in the Documents folder, and TorrentLAN can be started from the desktop shortcut")
+        print("If prompt of a firewall appear then allow it(you can read about it in privacy & conncern of TorrentLAN in github)")
+        time.sleep(2)
+        print("Now you can close the window")
+
+        BASE_DIR=INSTALL.BASE_DIR
+        command="python " + "utils/file_transfer/node.py"
+        if platform.system=='Linux':
+            subprocess.run("sudo -u "+INSTALL.user+" "+command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else :
+            subprocess.run(command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 # Check privileges
 def check_admin():
@@ -581,5 +605,6 @@ if __name__ == "__main__":
     # check privileges
     if not check_admin():
         print("Please run this script as an administrator/root !")
+        input("Press enter to exit")
         sys.exit(1)
     INSTALL.main()

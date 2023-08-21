@@ -8,6 +8,7 @@ from utils.dashboard_db.main import fetch_all_entries,update_dashboard_db,delete
 # from utils.django_utils.dashboard_cache import cache_fetch,cache_update
 from utils.remover.log import fetch_logs_size,delete_logs
 from utils.remover.tmp_downloads import fetch_tmp_size,delete_tmp
+from utils.django_utils.send_base_dir import get_base_dir
 
 
 module_path = "utils/tracker/client(c-s).py"
@@ -256,6 +257,12 @@ def db_search(search_bys: list, searchs: list):
 
     results = search_db(search_bys, searchs)
     return results
+
+def fetch_base_dir()->str:
+    """
+    - returns the base dir
+    """
+    return get_base_dir()
 
 class dashboard_fxns():
     # def cache_fetcher(only_fetch=False):
