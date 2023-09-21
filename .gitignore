@@ -10,3 +10,4 @@ data/.db/*.db
 !dist/*.whl
 build/*
 test_folders/
+iitj_specific/*
