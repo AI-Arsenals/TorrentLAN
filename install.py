@@ -119,16 +119,17 @@ class INSTALL:
 
     class WINDOWS:
         @staticmethod
-        def create_shortcut(source_loc, destination_loc,name):
+        def create_shortcut(source_loc, destination_loc,name,icon_path=None):
             if not INSTALL.new_install:
                 return
             import win32com.client
-            
             shell = win32com.client.Dispatch("WScript.Shell")
             shortcut = shell.CreateShortCut(os.path.join(destination_loc, name+".lnk"))
             shortcut.Targetpath = source_loc
+            if icon_path:
+                total_path = os.path.join(INSTALL.BASE_DIR, icon_path)
+                shortcut.IconLocation = total_path
             shortcut.save()
-
             print(f"Created shortcut for {source_loc} at {destination_loc} with name {name}")
             
         @staticmethod
@@ -210,7 +211,7 @@ class INSTALL:
 
     class LINUX:
         @staticmethod
-        def create_shortcut(source_loc, destination_loc, name):
+        def create_shortcut(source_loc, destination_loc, name,icon_path=None):
             if not INSTALL.new_install:
                 return
             shortcut_path = os.path.join(destination_loc, name)
@@ -218,7 +219,12 @@ class INSTALL:
             if os.path.exists(shortcut_path):
                 print(f"Shortcut already exists at {shortcut_path}")
             else:
-                subprocess.run(["ln", "-s", source_loc, shortcut_path])
+                command = f"ln -s '{source_loc}' '{shortcut_path}'"
+                if icon_path:
+                    total_path = os.path.join(INSTALL.BASE_DIR, icon_path)
+                    command += f" -i '{total_path}'"
+
+                subprocess.run(command, shell=True)
                 print(f"Created shortcut for {source_loc} at {shortcut_path} with name {name}")
 
 
@@ -394,15 +400,19 @@ class INSTALL:
 
     class MAC:
         @staticmethod
-        def create_shortcut(source_loc, destination_loc, name):
+        def create_shortcut(source_loc, destination_loc, name,icon_path=None):
             if not INSTALL.new_install:
                 return
 
             # Create the alias (shortcut)
             alias_path = os.path.join(destination_loc, name + ".alias")
 
-            # Create the alias using the 'os' module
-            os.system(f"ln -s '{source_loc}' '{alias_path}'")
+            command=f"ln -s '{source_loc}' '{alias_path}'"
+            if icon_path:
+                total_path = os.path.join(INSTALL.BASE_DIR, icon_path)
+                command += f" -i '{total_path}'"
+
+            os.system(command)
 
             print(f"Created shortcut for {source_loc} at {destination_loc} with name {name}")
 
@@ -533,23 +543,23 @@ class INSTALL:
 
 
     def main():
-        INSTALL.ALL_PLATFORMS.copy_to_program_files()
-        INSTALL.ALL_PLATFORMS.run_once("utils/identity/main.py")
-        time.sleep(1)
-        INSTALL.ALL_PLATFORMS.run_once("utils/tracker/client_ip_reg(c-s).py")
-        time.sleep(1)
+        # INSTALL.ALL_PLATFORMS.copy_to_program_files()
+        # INSTALL.ALL_PLATFORMS.run_once("utils/identity/main.py")
+        # time.sleep(1)
+        # INSTALL.ALL_PLATFORMS.run_once("utils/tracker/client_ip_reg(c-s).py")
+        # time.sleep(1)
 
         if platform.system() == "Windows":
             INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~/Documents"), "TorrentLAN")
-            INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start.exe"), os.path.expanduser("~/Desktop"), "TorrentLAN.exe")
-            INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
-            INSTALL.WINDOWS.daemon_time(os.path.join("utils", "file_transfer", "node.py"),5)
-            INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
-            INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"),5)
-            INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
+            INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start.exe"), os.path.expanduser("~/Desktop"), "TorrentLAN.exe","./docs/Logo/Icon.ico")
+            # INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
+            # INSTALL.WINDOWS.daemon_time(os.path.join("utils", "file_transfer", "node.py"),5)
+            # INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
+            # INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"),5)
+            # INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
         elif platform.system() == "Linux":
             INSTALL.LINUX.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~" + os.getlogin())+"/Documents", "TorrentLAN")
-            INSTALL.LINUX.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start"), os.path.expanduser("~/Desktop"), "TorrentLAN")
+            INSTALL.LINUX.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start"), os.path.expanduser("~/Desktop"), "TorrentLAN","./docs/Logo/Icon.ico")
             INSTALL.LINUX.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
             # INSTALL.LINUX.daemon_networkchange(os.path.join("utils", "file_transfer", "node.py"))
             INSTALL.LINUX.daemon_time(os.path.join("utils", "file_transfer", "node.py"),5)
@@ -559,7 +569,7 @@ class INSTALL:
             INSTALL.LINUX.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
         elif platform.system() == "Darwin":
             INSTALL.MAC.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~" + os.getlogin())+"/Documents", "TorrentLAN")
-            INSTALL.MAC.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start"), os.path.expanduser("~/Desktop"), "TorrentLAN")
+            INSTALL.MAC.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start"), os.path.expanduser("~/Desktop"), "TorrentLAN","./docs/Logo/Icon.ico")
             INSTALL.MAC.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
             INSTALL.MAC.daemon_networkchange(os.path.join("utils", "file_transfer", "node.py"))
             INSTALL.MAC.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
@@ -581,12 +591,12 @@ class INSTALL:
         time.sleep(2)
         print("Now you can close the window")
 
-        BASE_DIR=INSTALL.BASE_DIR
-        command="python " + "utils/file_transfer/node.py"
-        if platform.system=='Linux':
-            subprocess.run("sudo -u "+INSTALL.user+" "+command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        else :
-            subprocess.run(command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # BASE_DIR=INSTALL.BASE_DIR
+        # command="python " + "utils/file_transfer/node.py"
+        # if platform.system=='Linux':
+        #     subprocess.run("sudo -u "+INSTALL.user+" "+command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # else :
+        #     subprocess.run(command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 # Check privileges
 def check_admin():

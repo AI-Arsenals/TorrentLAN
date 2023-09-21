@@ -29,6 +29,8 @@
 - Run the downloaded .exe to install the software eg- `TorrentLAN-1.0.0.exe` then press enter
 - You can see all your data in `Documents/TorrentLAN` folder
 - Now you can use the TorrentLAN application from start menu and desktop shortcut
+- It is possible in some case that the desktop shortcut will not work(the reason is your user don't have bydefault privilage permissions) so in that case right click on desktop shortcut and run as administrator
+- Also along with above point, due to security reasons, you won't be able to upload your file, so to upload file you run the application normally and then upload
 
 ### Linux
 
@@ -53,6 +55,11 @@
 - run `npm install` (this will download about 500MB of data) 
 - Change directory to the folder TorrentLAN(i.e. base directory where you have downloaded TorrentLAN)
 - run `python ./no_install_launch.py`
+
+### Advanced Options
+
+- To manually upload a file you can goto Documents/TorrentLAN/Normal there inside the folder you can either paste it, if you don't want to paste then just create symlink using python os.symlink()
+- You can goto configs folder inside TorrentLAN, and check setting yourself
 
 ---
 ## Developer Guide
