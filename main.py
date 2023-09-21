@@ -1,3 +1,4 @@
+import os
 import importlib.util as import_util
 from utils.identity.main import set_user_name,show_user_name
 from utils.file_transfer.main import DOWNLOAD_FILE_CLASS
@@ -264,6 +265,35 @@ def fetch_base_dir()->str:
     """
     return get_base_dir()
 
+def file_location_opener(file_location:str)->bool:
+    """
+    - opens the file location in the file explorer
+    - returns True if success else False
+    """
+    BASE_DIR=get_base_dir()
+    try:
+        # check if BASE_DIR is in file_location
+        if not (BASE_DIR in file_location):
+            file_location=os.path.join(BASE_DIR,file_location)
+        file_location=os.path.realpath(file_location)
+
+        # check if BASE_DIR is in file_location
+        if not (BASE_DIR in file_location):
+            log("file_location_opener : file_location is not in BASE_DIR",2)
+            # report suspicious activity
+            return False
+        # if(os.path.isfile(file_location)):
+            # os.startfile(file_location)
+        # else:
+            # one_dir_back=os.path.dirname(file_location)
+            # # highlight file in explorer
+            # os.startfile(one_dir_back)
+        os.startfile(file_location)
+        return True
+    except Exception as e:
+        log(f"Error in file_location_opener : {e}")
+        return False
+    
 class dashboard_fxns():
     # def cache_fetcher(only_fetch=False):
     #     """

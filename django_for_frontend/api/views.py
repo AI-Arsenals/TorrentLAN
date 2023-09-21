@@ -249,7 +249,7 @@ class Download:
             return JsonResponse({'status':False})
 
 
-        content = main.download(data['unique_id'][0],data['lazy_file_hash'],data['table_name'],data['name'],"data/Normal/Games",'http://127.0.0.1:8000/api/progress')
+        content = main.download(data['unique_id'][0],data['lazy_file_hash'],data['table_name'],data['name'],data['file_location'],'http://127.0.0.1:8000/api/progress')
         print(content[0],type(content[0]))
         dic = {
             'status': content[0]
@@ -366,4 +366,11 @@ class Cache_remover:
         print(content)
         return JsonResponse({'content':content})
 
-    
+@api_view(['POST'])
+def open_file_loc(request):
+    data=json.loads(request.body.decode())
+    print(data)
+    loc=data['location']
+    main.file_location_opener(loc)
+    return HttpResponse('done')
+

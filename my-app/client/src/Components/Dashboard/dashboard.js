@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import CircularProgressBarWithLabel from '../CircularProgressBar/circularProgressBarWithLabel'
 import CircularProgress from '@mui/material/CircularProgress';
 import "../Dashboard/dashboardStyles.css";
@@ -14,6 +15,10 @@ const BytesInfo = () => {
 };
 
 const FileCard = ({ file, index }) => {
+  const file_loc=file["file_location"]
+  const openFileLocation=()=>{
+    axios.post('http://127.0.0.1:8000/api/openFileLocation',{'location':file_loc})
+  }
   return (
     <div className="file-card" id={`temp${index}`}>
       <div className="sno">{index}</div>
@@ -22,12 +27,16 @@ const FileCard = ({ file, index }) => {
       <div className="table-name">{file["table_name"]}</div>
       <div className="percentage"><i className="fa-sharp fa-regular fa-circle-check"></i></div>
       <div className="size">{file["Size"]}</div>
-      <div className="location">{file["file_location"]}</div>
+      <div className="location">< i className="fa-solid fa-regular fa-folder-open" onClick={openFileLocation}></i></div>
     </div>
   );
 };
 
 const ActiveFileCard = ({ file, index }) => {
+  const file_loc=file["file_location"]
+  const openFileLocation=()=>{
+    axios.post('http://127.0.0.1:8000/api/openFileLocation',{'location':file_loc})
+  }
   return (
     <div className="file-card" id={`index`}>
       <div className="sno">{index}</div>
@@ -36,7 +45,7 @@ const ActiveFileCard = ({ file, index }) => {
       <div className="table-name">{file["table_name"]}</div>
       <div className="percentage">{file["percentage"]}<CircularProgressBarWithLabel variant="determinate" value={file["percentage"]}/></div>
       <div className="size">{file["Size"]}</div>
-      <div className="location">{file["file_location"]}</div>
+      <div className="location">< i className="fa-solid fa-regular fa-folder-open" onClick={openFileLocation}></i></div>
     </div>
   );
 };

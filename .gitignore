@@ -4,6 +4,7 @@ torrentlan/*
 data/.logs/*
 configs/identity.json
 configs/file_transfer_node_config.json
+configs/base_dir.json
 *.pyc
 dist/*
 data/.db/*.db

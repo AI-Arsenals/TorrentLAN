@@ -65,9 +65,14 @@ const Upload = (props) => {
   };
 
   const options = [
+    // ["Games", "Movies", "Music", "Pictures", "Documents","College","Others"]
     { value: "Games", label: "Games" },
     { value: "Music", label: "Music" },
     { value: "Movies", label: "Movies" },
+    { value: "College", label: "College" },
+    { value: "Others", label: "Others" },
+    { value: "Documents", label: "Documents" },
+    { value: "Pictures", label: "Pictures" },
   ];
   const [destFolder, setDestFolder] = useState(null);
   const DropDown = () => {

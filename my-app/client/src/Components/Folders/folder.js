@@ -152,8 +152,9 @@ const FolderView = (props) => {
         Size: file[5]["Size"],
         unique_id: file[7],
         table_name: "Normal_Content_Main_Folder",
-        file_location: "temp",
+        file_location: file[5]["Path"]
       };
+      console.log(file);
       data = JSON.stringify(data);
       fetch("http://127.0.0.1:8000/api/download", {
         method: "POST",
