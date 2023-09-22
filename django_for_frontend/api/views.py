@@ -374,3 +374,8 @@ def open_file_loc(request):
     main.file_location_opener(loc)
     return HttpResponse('done')
 
+@api_view(['GET'])
+def url_open(request):
+    url=request.GET.get('url')
+    main.url_opener(url)
+    return HttpResponse('done')

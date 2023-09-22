@@ -10,6 +10,8 @@ from utils.dashboard_db.main import fetch_all_entries,update_dashboard_db,delete
 from utils.remover.log import fetch_logs_size,delete_logs
 from utils.remover.tmp_downloads import fetch_tmp_size,delete_tmp
 from utils.django_utils.send_base_dir import get_base_dir
+from utils.django_utils.open_url import open_url
+from utils.django_utils.file_location_opener import open_file_location
 
 
 module_path = "utils/tracker/client(c-s).py"
@@ -265,6 +267,18 @@ def fetch_base_dir()->str:
     """
     return get_base_dir()
 
+def url_opener(url:str)->bool:
+    """
+    - opens the url in the browser
+    - returns True if success else False
+    """
+    try:
+        open_url(url)
+        return True
+    except Exception as e:
+        log(f"Error in url_opener : {e}")
+        return False
+    
 def file_location_opener(file_location:str)->bool:
     """
     - opens the file location in the file explorer
@@ -272,24 +286,8 @@ def file_location_opener(file_location:str)->bool:
     """
     BASE_DIR=get_base_dir()
     try:
-        # check if BASE_DIR is in file_location
-        if not (BASE_DIR in file_location):
-            file_location=os.path.join(BASE_DIR,file_location)
-        file_location=os.path.realpath(file_location)
-
-        # check if BASE_DIR is in file_location
-        if not (BASE_DIR in file_location):
-            log("file_location_opener : file_location is not in BASE_DIR",2)
-            # report suspicious activity
-            return False
-        # if(os.path.isfile(file_location)):
-            # os.startfile(file_location)
-        # else:
-            # one_dir_back=os.path.dirname(file_location)
-            # # highlight file in explorer
-            # os.startfile(one_dir_back)
-        os.startfile(file_location)
-        return True
+        val=open_file_location(file_location,BASE_DIR)
+        return val
     except Exception as e:
         log(f"Error in file_location_opener : {e}")
         return False
@@ -412,6 +410,7 @@ class remover():
 
         """
         return delete_tmp()
+    
 
 if __name__=='__main__':
     download("b43b6944-f193-4f19-8010-6c22dacbf4c9","1a7131b3f5968315254372c86dc30317",table_name="Normal_Content_Main_Folder",name__api="test_name",file_loc__api="data/Normal/Games",api_loc="http://127.0.0.1:8000/api/progress")

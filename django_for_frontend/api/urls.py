@@ -16,4 +16,5 @@ urlpatterns = [
     path('set_username',views.UserInfo.setUsername,name="set username"),
     path('cache',views.Cache_remover.main,name="log and temp_folder remover"),
     path('openFileLocation',views.open_file_loc,name="open file location"),
+    path('urlopen',views.url_open,name="open url"),
 ]

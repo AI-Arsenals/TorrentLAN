@@ -12,18 +12,18 @@ export const menuItems=[
         cName: "nav-links",
         icon: "fa-solid fa-circle-info"
     },
-    {
-        title: "Services",
-        url: "/temp",
-        cName: "nav-links",
-        icon: "fa-solid fa-briefcase"
-    },
-    {
-        title: "Contact Us",
-        url: "/contact",
-        cName: "nav-links",
-        icon: "fa-solid fa-address-book"
-    },
+    // {
+    //     title: "Services",
+    //     url: "/temp",
+    //     cName: "nav-links",
+    //     icon: "fa-solid fa-briefcase"
+    // },
+    // {
+    //     title: "Contact Us",
+    //     url: "/contact",
+    //     cName: "nav-links",
+    //     icon: "fa-solid fa-address-book"
+    // },
     // {
     //     title: "SignUp",
     //     url: "/signup",
