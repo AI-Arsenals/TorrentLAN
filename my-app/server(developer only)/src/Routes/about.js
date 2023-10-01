@@ -5,6 +5,16 @@ import hero_img from '../assets/hero_images/hero_1.jpg';
 import HeroSection from '../Components/Hero_section/hero';
 
 const About = () => {
+  const open_url = (url) => {
+    axios.get('http://127.0.0.1:8000/api/urlopen?url=' + url)
+      .then((response) => {
+        // console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      })
+  }
+  
   const linkStyle = {
     color: '#d9ff00',
     cursor: 'pointer', // Add a pointer cursor to make it clear it's clickable
@@ -33,8 +43,8 @@ const About = () => {
         </ul>
       </section>
       <section>
-        <h2>If you like this project, please give a star to this project at <a href='https://github.com/AI-Arsenals/TorrentLAN' style={linkStyle}>STAR</a></h2>
-        <h2>To report any bug or feature request, create an issue at <a href='https://github.com/AI-Arsenals/TorrentLAN/issues' style={linkStyle}>ISSUES</a></h2>
+        <h2>If you like this project, please give a star to this project at <a onClick={() => open_url('https://github.com/AI-Arsenals/TorrentLAN')} style={linkStyle}>STAR</a></h2>
+        <h2>To report any bug or feature request, create an issue at <a onClick={() => open_url('https://github.com/AI-Arsenals/TorrentLAN/issues')} style={linkStyle}>ISSUES</a></h2>
       </section>
     </div>
   );
