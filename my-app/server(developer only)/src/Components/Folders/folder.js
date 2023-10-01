@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import RightSideBar from "../RightSideBar/rightSideBar";
 import FolderItem from "./folder-item";
 import Snackbar from "../SnackBars/Snackbars";
-const dns = require('dns');
+// const dns = require('dns');
 
 const FolderView = (props) => {
   const [rightIsClosed, setRightIsClosed] = useState(false);
@@ -65,26 +65,75 @@ const FolderView = (props) => {
 
 
 
-  const fetchIpAddress = async () => {
-    try {
-      const addresses = await dns.promises.resolve('http://home.iitj.ac.in');
-      console.log('addresses: ', addresses);
-      if (addresses && addresses.length > 0) {
-        return addresses[0]; // Return the first IP address
-      } else {
-        return null;
-      }
-    } catch (error) {
-      console.error("Error getting IP address:", error);
-      return null;
-    }
-  };
+  // const getIpAddress = async () => {
+  //   const ip_addresses = []
+  //   dns.resolve('http://home.iitj.ac.in',(err,records)=>{
+  //     console.log(err)
+  //     console.log(records)
+  //     return records[0];
+  //   })
+  //   // try {
+  //   //   const addresses = await dns.promises.resolve('http://home.iitj.ac.in');
+  //   //   console.log('addresses: ', addresses);
+  //   //   if (addresses && addresses.length > 0) {
+  //   //     return addresses[0]; // Return the first IP address
+  //   //   } else {
+  //   //     return null;
+  //   //   }
+  //   // } catch (error) {
+  //   //   console.error("Error getting IP address:", error);
+  //   //   return null;
+  //   // }
+  // };
+
+  const getIpAddress = async () => {
+    return '172.16.100.51';
+    // const ipAddresses = ['172.16.100.51', '10.10.11.31', '172.16.100.51', '10.10.11.31','127.0.0.1']; // Assuming you have some IP addresses here
+
+    // const timeoutDuration = 2000; // 2 seconds in milliseconds
+
+    // const fetchWithTimeout = (url, timeout) => {
+    //     return Promise.race([
+    //         fetch(url),
+    //         new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), timeout))
+    //     ]);
+    // };
+
+    // const fetchIpAddresses = async () => {
+    //     const fetchPromises = ipAddresses.map(async(ip) => {
+    //         try {
+    //             const response = await fetchWithTimeout(`http://${ip}`, timeoutDuration);
+    //             console.log(response)
+    //             if (response.status === 200) {
+    //                 return ip; // Return the IP if status is 200
+    //             }
+    //             return null;
+    //         } catch (error) {
+    //             return null;
+    //         }
+    //     });
+
+    //     const resolvedIPs = await Promise.all(fetchPromises);
+    //     return resolvedIPs.filter(ip => ip !== null); // Filter out the null values
+    // };
+
+    // const validIPs = await fetchIpAddresses();
+    // console.log(validIPs)
+
+    // if (validIPs.length > 0) {
+    //     return validIPs[0]; // Return the first valid IP
+    // }
+
+    // return -1;
+};
+
+
   
 
   const getFolderList = async () => {
     let response, data, depth;
 
-    const ip = await fetchIpAddress();
+    const ip = await getIpAddress();
     if (currFolder.length === 1) {
       response = await fetch(`http://${ip}:8000/api/search_query?name=${currFolder[0]}`);
       depth = -1;
@@ -168,7 +217,7 @@ const FolderView = (props) => {
         table_name: "Normal_Content_Main_Folder",
         file_location: "temp",
       };
-      const ip = await fetchIpAddress();
+      const ip = await getIpAddress();
       const requestOptions = {
         method: "POST",
         body: JSON.stringify(data),
@@ -218,7 +267,7 @@ const FolderView = (props) => {
   }, [currFolder, downloadList, highlightedFolder]);
 
   const backButtonHandler = async () => {
-    const ip = await fetchIpAddress();
+    const ip = await getIpAddress();
     deselectHighlighted();
     let response, data;
 

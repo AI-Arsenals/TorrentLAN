@@ -5,6 +5,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import "../Dashboard/dashboardStyles.css";
 
 
+
 const BytesInfo = () => {
   return (
     <div className="byte-info">
@@ -18,6 +19,8 @@ const FileCard = ({ file, index }) => {
   const file_loc=file["file_location"]
   const openFileLocation=()=>{
     axios.post('http://127.0.0.1:8000/api/openFileLocation',{'location':file_loc})
+    
+    
   }
   return (
     <div className="file-card" id={`temp${index}`}>

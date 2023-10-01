@@ -1,6 +1,7 @@
 import { Component } from "react";
 import { Link } from "react-router-dom";
 import "./navbarStyles.css"
+import logo_img from '../../assets/icons/Logo.png'
 import { menuItems } from './menuItems';
 
 class Navbar extends Component {
@@ -11,7 +12,7 @@ class Navbar extends Component {
             <>
                 <nav className="Navbar-items" id="Navbar-items">
                     <h3 className="Navbar-logo">
-                        LOGO
+                        <img src={logo_img} alt="TorrentLAN" height="50px"/>
                     </h3>
 
 

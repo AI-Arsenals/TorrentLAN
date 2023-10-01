@@ -249,7 +249,7 @@ const FolderView = (props) => {
       <>
         <div className="left-content">
           <i
-            className="fa-solid fa-arrow-left fa-2xl"
+            className="fa-solid fa-arrow-left fa-2xl backbutton"
             onClick={backButtonHandler}
           ></i>
 

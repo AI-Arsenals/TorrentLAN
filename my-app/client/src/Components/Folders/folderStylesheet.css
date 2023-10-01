@@ -29,6 +29,12 @@
     /* border: 1px solid white; */
     align-items: center;
     margin: 0px 30px;
+
+    .folder-name{
+        max-width: 100px;
+        overflow-x: scroll;
+        /* word-break: unset; */
+    }
 }
 
 .folder-icon{
