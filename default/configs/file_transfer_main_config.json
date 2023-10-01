@@ -1,0 +1,15 @@
+{
+    "max_concurrent_download_to_single_ip": 15,
+    "ip_lock_taken_by_big_file_download": 3,
+    "max_concurrent_high_speed_download" : 10,
+    "max_concurrent_low_speed_download" : 100,
+    "size_after_which_file_is_considered_big": 5000000,
+    "break_download_when_size_exceed": 50000000,
+    "high_speed_threshold": 10000000,
+    "slow_speed_break_download_when_size_exceed": 1250000,
+    "__comment_break_download_when_size_exceed": "50MB",
+    "__comment_size_after_which_file_is_considered_big": "5MB",
+    "__comment_high_speed_threshold": "10MBps",
+    "__comment_slow_speed_break_download_when_size_exceed": "1250KB",
+    "tmp_download_dir": "data/.tmp_download"
+}

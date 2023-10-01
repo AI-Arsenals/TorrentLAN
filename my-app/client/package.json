@@ -39,7 +39,13 @@
     "electron": "electron .",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "electron:build": "npm run build && electron-builder -c.extraMetadata.main=build/electron.js"
+    "electron:build": "npm run build && electron-builder -c.extraMetadata.main=build/electron.js",
+    "build-win": "npm run build && electron-builder --win -c.extraMetadata.main=build/electron.js"
+  },
+  "build": {
+    "win": {
+      "icon": "build/favicon.ico"
+    }
   },
   "eslintConfig": {
     "extends": [

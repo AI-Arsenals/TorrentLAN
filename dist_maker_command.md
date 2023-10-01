@@ -7,8 +7,8 @@ pyinstaller torrentlan_start.py --onefile --distpath ./torrentlan_launcher
 
 pyinstaller --onefile \
             --name OneExec \
-            --add-data "configs:configs" \
-            --add-data "data:data" \
+            --add-data "default/configs:configs" \
+            --add-data "default/data:data" \
             --add-data "docs:docs" \
             --add-data "utils:utils" \
             --add-data "requirements.txt:." \
@@ -21,6 +21,10 @@ pyinstaller --onefile \
             install.py
 ```
 
+```bash
+electron-packager . --out=pack/ --overwrite --ignore="(.git|.vscode|node_modules|src|.gitignore|README.md|LICENSE.md)" --asar
+```
+
 ## Windows
 
 ```powershell
@@ -28,8 +32,8 @@ pyinstaller torrentlan_start.py --onefile --distpath ./torrentlan_launcher
 
 pyinstaller --onefile `
             --name OneExec `
-            --add-data "configs;configs" `
-            --add-data "data;data" `
+            --add-data "default/configs;configs" `
+            --add-data "default/data;data" `
             --add-data "docs;docs" `
             --add-data "utils;utils" `
             --add-data "requirements.txt;." `
@@ -40,6 +44,11 @@ pyinstaller --onefile `
             --add-data "django_for_frontend;django_for_frontend" `
             --add-data "my-app/client/dist;my-app/client/dist" `
             install.py
+
+```
+
+```powershell
+electron-packager . --out=pack/ --overwrite --ignore="(.git|.vscode|node_modules|src|.gitignore|README.md|LICENSE.md)" --asar
 ```
 
 ## Note

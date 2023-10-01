@@ -1,12 +1,11 @@
 import subprocess
-import tempfile
 import os
 import sys
 import shutil
 import platform
 import time
 import json
-
+import base64
 
 class INSTALL:
     ######### Intitialize variables #########
@@ -122,6 +121,8 @@ class INSTALL:
         def create_shortcut(source_loc, destination_loc,name,icon_path=None):
             if not INSTALL.new_install:
                 return
+            if not os.path.exists(destination_loc):
+                os.makedirs(destination_loc)
             import win32com.client
             shell = win32com.client.Dispatch("WScript.Shell")
             shortcut = shell.CreateShortCut(os.path.join(destination_loc, name+".lnk"))
@@ -208,6 +209,79 @@ class INSTALL:
             subprocess.run(task_command, shell=True)
             
             print(f"Created Time daemon for {file_loc}")
+
+        @staticmethod
+        def window_is_admin():
+            if os.name == 'nt':
+                import ctypes
+                import traceback
+                try:
+                    return ctypes.windll.shell32.IsUserAnAdmin()
+                except:
+                    traceback.print_exc()
+                    print ("Admin check failed, assuming not an admin.")
+                    return False
+            elif os.name == 'posix':
+                # Check for root on Posix
+                return os.getuid() == 0
+
+            
+        @staticmethod
+        def runAsAdmin_windows(args=None,cmdLine=None, wait=True):
+            import sys, types
+            import win32con, win32event, win32process
+            from win32com.shell.shell import ShellExecuteEx
+            from win32com.shell import shellcon
+
+            python_exe = sys.executable
+            if cmdLine is None:
+                cmdLine = [python_exe] + sys.argv+[args]
+            elif type(cmdLine) not in (types.TupleType,types.ListType):
+                raise ValueError
+            cmd = '"%s"' % (cmdLine[0],)
+            params = " ".join(['"%s"' % (x,) for x in cmdLine[1:]])
+            cmdDir = ''
+            showCmd = win32con.SW_SHOWNORMAL
+            #showCmd = win32con.SW_HIDE
+            lpVerb = 'runas'  # causes UAC elevation prompt.
+            procInfo = ShellExecuteEx(nShow=showCmd,
+                                    fMask=shellcon.SEE_MASK_NOCLOSEPROCESS,
+                                    lpVerb=lpVerb,
+                                    lpFile=cmd,
+                                    lpParameters=params)
+            if wait:
+                procHandle = procInfo['hProcess']    
+                obj = win32event.WaitForSingleObject(procHandle, win32event.INFINITE)
+                rc = win32process.GetExitCodeProcess(procHandle)
+            else:
+                rc = None
+
+            return rc
+
+        # # use below as a template for runasadmin_windows
+        # def runasadmin_help_windows(args=None):
+        #     rc = 0
+        #     if not INSTALL.WINDOWS.window_is_admin():
+        #         # print ("You're not an admin."), os.getpid(), "params: ", sys.argv
+        #         rc = INSTALL.WINDOWS.runAsAdmin_windows(args)
+        #     else:
+        #         print ("You are an admin!"), os.getpid(), "params: ", sys.argv
+        #         rc = 0
+        #     x = input('Press Enter to exit.')
+        #     return rc
+
+        @staticmethod
+        def get_user_directory():
+            try:
+                import winreg
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders")
+                user_directory = winreg.QueryValueEx(key, "Personal")[0]
+                winreg.CloseKey(key)
+
+                return os.path.dirname(user_directory)
+            except Exception as e:
+                print(f"Error: {e}")
+                return None
 
     class LINUX:
         @staticmethod
@@ -543,21 +617,68 @@ class INSTALL:
 
 
     def main():
-        # INSTALL.ALL_PLATFORMS.copy_to_program_files()
-        # INSTALL.ALL_PLATFORMS.run_once("utils/identity/main.py")
-        # time.sleep(1)
-        # INSTALL.ALL_PLATFORMS.run_once("utils/tracker/client_ip_reg(c-s).py")
-        # time.sleep(1)
+        
+        if len(sys.argv) < 2:
+            INSTALL.ALL_PLATFORMS.copy_to_program_files()        
+            try:
+                subprocess.run(["pip", "install", "-r", "requirements.txt"], cwd=INSTALL.BASE_DIR, check=True)
+            except :
+                print(f"Error installing requirements, please goto {INSTALL.BASE_DIR} and run 'pip install -r requirements.txt' and make sure it executes successfully")
+                input("Press enter to exit")
+                return
+
+
+        if not INSTALL.new_install:
+            print("TorrentLAN updated successfully")
+            input("Press enter to exit")
+            return
+        
+
+        ################ Below Codes is for first time installation only
 
         if platform.system() == "Windows":
-            INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~/Documents"), "TorrentLAN")
-            INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start.exe"), os.path.expanduser("~/Desktop"), "TorrentLAN.exe","./docs/Logo/Icon.ico")
-            # INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
-            # INSTALL.WINDOWS.daemon_time(os.path.join("utils", "file_transfer", "node.py"),5)
-            # INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
-            # INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"),5)
-            # INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
+            rc = 0
+            if not INSTALL.WINDOWS.window_is_admin():
+                # print ("Not admin.", os.getpid(), "params: ", sys.argv)
+                path=INSTALL.WINDOWS.get_user_directory()
+                arg1=base64.b64encode(path.encode('utf-8')).decode('utf-8')
+                rc = INSTALL.WINDOWS.runAsAdmin_windows(arg1)
+            else:
+                # print("Admin!", os.getpid(), "params: ", sys.argv)
+                try:
+                    # if dev then use arg1=sys.argv[1] else arg1=sys.argv[2] during installation(due to pyinstaller)
+                    if os.getcwd().endswith("TorrentLAN"):
+                        arg1=sys.argv[1]
+                    else:
+                        arg1=sys.argv[2]
+                    path=(base64.b64decode(arg1)).decode('utf-8')
+                    INSTALL.ALL_PLATFORMS.run_once("utils/identity/main.py")
+                    INSTALL.ALL_PLATFORMS.run_once("utils/tracker/client_ip_reg(c-s).py")
+                    INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.join(path,"Documents"), "TorrentLAN")
+                    INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.join(path,"Desktop"), "TorrentLAN")
+                    INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start.exe"), os.path.join(path,"Desktop"), "TorrentLAN.exe","./docs/Logo/Icon.ico")
+                    INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
+                    INSTALL.WINDOWS.daemon_time(os.path.join("utils", "file_transfer", "node.py"),5)
+                    INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
+                    INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"),5)
+                    INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
+
+                    print("Data of TorrentLAN is stored in the Documents folder, and TorrentLAN can be started from the desktop shortcut")
+                    print("If prompt of a firewall appear then allow it(you can read about it in privacy & conncern of TorrentLAN in github)")
+                    command=sys.executable + "utils/file_transfer/node.py"
+                    subprocess.run(command, cwd=INSTALL.BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    time.sleep(1)
+                    print("Installation completed !!!!!!!!!")
+                except Exception as e:
+                    print(e)
+                    print("Installation failed !!!!!!!!!")
+                input("Press enter to exit")
+                rc = 0
+            return rc
+                
         elif platform.system() == "Linux":
+            INSTALL.ALL_PLATFORMS.run_once("utils/identity/main.py")
+            INSTALL.ALL_PLATFORMS.run_once("utils/tracker/client_ip_reg(c-s).py")
             INSTALL.LINUX.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~" + os.getlogin())+"/Documents", "TorrentLAN")
             INSTALL.LINUX.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start"), os.path.expanduser("~/Desktop"), "TorrentLAN","./docs/Logo/Icon.ico")
             INSTALL.LINUX.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
@@ -568,6 +689,8 @@ class INSTALL:
             INSTALL.LINUX.daemon_time(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"),5)
             INSTALL.LINUX.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
         elif platform.system() == "Darwin":
+            INSTALL.ALL_PLATFORMS.run_once("utils/identity/main.py")
+            INSTALL.ALL_PLATFORMS.run_once("utils/tracker/client_ip_reg(c-s).py")
             INSTALL.MAC.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.expanduser("~" + os.getlogin())+"/Documents", "TorrentLAN")
             INSTALL.MAC.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start"), os.path.expanduser("~/Desktop"), "TorrentLAN","./docs/Logo/Icon.ico")
             INSTALL.MAC.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
@@ -575,46 +698,28 @@ class INSTALL:
             INSTALL.MAC.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
             INSTALL.MAC.daemon_networkchange(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
             INSTALL.MAC.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
-        
-        try:
-            subprocess.run(["pip", "install", "-r", "requirements.txt"], cwd=INSTALL.BASE_DIR, check=True)
-            if INSTALL.new_install:
-                print("Installation complete !!!!!!!!!")
-            else:
-                print("Updation complete !!!!!!!!!")
-        except :
-            print(f"Error installing requirements, please goto {INSTALL.BASE_DIR} and run 'pip install -r requirements.txt' and make sure it executes successfully")
+        else:
+            print("Unsupported OS")
+            input("Press enter to exit")
+            return
             
         print("You can now close the window !!")
         print("Data of TorrentLAN is stored in the Documents folder, and TorrentLAN can be started from the desktop shortcut")
         print("If prompt of a firewall appear then allow it(you can read about it in privacy & conncern of TorrentLAN in github)")
         time.sleep(2)
-        print("Now you can close the window")
 
-        # BASE_DIR=INSTALL.BASE_DIR
-        # command="python " + "utils/file_transfer/node.py"
-        # if platform.system=='Linux':
-        #     subprocess.run("sudo -u "+INSTALL.user+" "+command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        # else :
-        #     subprocess.run(command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-# Check privileges
-def check_admin():
-    if platform.system() == "Windows":
-        try:
-            import ctypes
-            return ctypes.windll.shell32.IsUserAnAdmin()
-        except:
-            return False
-    elif platform.system() == "Linux" or platform.system() == "Darwin":
-        return os.geteuid() == 0
-    else:
-        return False
+        BASE_DIR=INSTALL.BASE_DIR
+        command="python " + "utils/file_transfer/node.py"
+        if platform.system=='Linux':
+            subprocess.run("sudo -u "+INSTALL.user+" "+command, cwd=BASE_DIR, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
 if __name__ == "__main__":
-    # check privileges
-    if not check_admin():
+    # We use Runas in windows to increase privileges later
+    if not INSTALL.WINDOWS.window_is_admin() and platform.system() != "Windows":
         print("Please run this script as an administrator/root !")
         input("Press enter to exit")
         sys.exit(1)
+
+
     INSTALL.main()

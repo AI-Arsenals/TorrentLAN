@@ -8,7 +8,7 @@ a = Analysis(
     ['install.py'],
     pathex=[],
     binaries=[],
-    datas=[('configs', 'configs'), ('data', 'data'), ('docs', 'docs'), ('utils', 'utils'), ('requirements.txt', '.'), ('LICENSE', '.'), ('main.py', '.'), ('README.md', '.'), ('torrentlan_launcher', 'torrentlan_launcher'), ('django_for_frontend', 'django_for_frontend'), ('my-app/dist', 'my-app/dist')],
+    datas=[('default/configs', 'configs'), ('default/data', 'data'), ('docs', 'docs'), ('utils', 'utils'), ('requirements.txt', '.'), ('LICENSE', '.'), ('main.py', '.'), ('README.md', '.'), ('torrentlan_launcher', 'torrentlan_launcher'), ('django_for_frontend', 'django_for_frontend'), ('my-app/client/dist', 'my-app/client/dist')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

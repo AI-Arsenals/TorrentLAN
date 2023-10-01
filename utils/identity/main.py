@@ -9,30 +9,39 @@ from utils.log.main import log
 CONFIG="configs/identity.json"
 
 def create_data_folders():
-    folders=["Games", "Movies", "Music", "Pictures", "Documents","College","Others"]
-    for folder in folders:
-        if not os.path.exists(os.path.join("data","Normal", folder)):
-            os.makedirs(os.path.join("data","Normal", folder))
-            log(f"Created folder {folder} in data")
+    try:
+        folders=["Games", "Movies", "Music", "Pictures", "Documents","College","Others"]
+        for folder in folders:
+            if not os.path.exists(os.path.join("data","Normal", folder)):
+                os.makedirs(os.path.join("data","Normal", folder))
+                log(f"Created folder {folder} in data")
+        return True
+    except Exception as e:
+        log(f"Error in creating data folders; error=: {e}")
+        return False
 
 
 def generate_client_id():
     create_data_folders()
-    if not os.path.exists(CONFIG):
-        with open(CONFIG, 'w') as f:
-            json.dump({}, f)
-    
-    with open(CONFIG, 'r') as f:
-        data = json.load(f)
-        if 'client_id' in data:
-            return
-        else:
-            client_id = str(uuid.uuid4())
-            data['client_id'] = client_id
+    try:
+        if not os.path.exists(CONFIG):
             with open(CONFIG, 'w') as f:
-                json.dump(data, f)
-            log(f"Generated client id={client_id}")
-            return
+                json.dump({}, f)
+        
+        with open(CONFIG, 'r') as f:
+            data = json.load(f)
+            if 'client_id' in data:
+                return
+            else:
+                client_id = str(uuid.uuid4())
+                data['client_id'] = client_id
+                with open(CONFIG, 'w') as f:
+                    json.dump(data, f)
+                log(f"Generated client id={client_id}")
+                return
+    except Exception as e:
+        log(f"Error in generating client id; error=: {e}")
+        return False
 
 def set_user_name(user_name=None):
     try:

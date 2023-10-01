@@ -4,6 +4,7 @@
 - Now you can download files with GBps speed, the only limitation is your computer's hardware
 
 ---
+
 ## Privacy & Concern
 
 - We don't ask any of your personal information
@@ -17,7 +18,6 @@
 
 ---
 
-
 ## Installation Guide
 
 ### Windows
@@ -25,8 +25,7 @@
 - Goto [Windows_Installer](https://github.com/AI-Arsenals/TorrentLAN/releases/tag/Windows)
 - Find the latest version (which is not beta) and inside '*assets*' click on `Windows_installer.exe` to download it
 - If firewall permission is asked in later process, then check the last point in [Privacy & Concern](#privacy--concern)
-- Right click on file and click on run as administrator
-- Run the downloaded .exe to install the software eg- `TorrentLAN-1.0.0.exe` then press enter
+- Now run `vx.x.x_Windows.exe`
 - You can see all your data in `Documents/TorrentLAN` folder
 - Now you can use the TorrentLAN application from start menu and desktop shortcut
 - It is possible in some case that the desktop shortcut will not work(the reason is your user don't have bydefault privilage permissions) so in that case right click on desktop shortcut and run as administrator
@@ -62,6 +61,7 @@
 - You can goto configs folder inside TorrentLAN, and check setting yourself
 
 ---
+
 ## Developer Guide
 
 ### Windows & Linux & Mac
@@ -70,6 +70,7 @@
 - You must have python and nodejs installed on your computer
 - Open terminal and change to the directory where the repository is cloned or extracted
 - run `pip install -r requirements.txt` (people who understand `env` can also go that way otherwise it is not needed)
+- delete folders `data` and `configs` and copy folders `data` and `configs` from `./default`
 - run `python ./utils/identity/main.py`
 - change to `./my-app` directory
 - run `npm install` (this will download about 500MB of data)
@@ -79,6 +80,7 @@
 - For People who are outside of (IITJ college) should follow [Outside IITJ College Guide](#outside-iitj-college-guide)
 
 ---
+
 ## Outside IITJ College Guide
 
 - This guide is for people who are outside (IITJ college)
