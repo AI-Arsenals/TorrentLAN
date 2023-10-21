@@ -24,12 +24,10 @@
 
 - Goto [Windows_Installer](https://github.com/AI-Arsenals/TorrentLAN/releases/tag/Windows)
 - Find the latest version (which is not beta) and inside '*assets*' click on `Windows_installer.exe` to download it
-- If firewall permission is asked in later process, then check the last point in [Privacy & Concern](#privacy--concern)
-- Now run `vx.x.x_Windows.exe`
-- You can see all your data in `Documents/TorrentLAN` folder
-- Now you can use the TorrentLAN application from start menu and desktop shortcut
-- It is possible in some case that the desktop shortcut will not work(the reason is your user don't have bydefault privilage permissions) so in that case right click on desktop shortcut and run as administrator
-- Also along with above point, due to security reasons, you won't be able to upload your file, so to upload file you run the application normally and then upload
+- If firewall permission is asked in later process the click allow, check the last point in [Privacy & Concern](#privacy--concern) for more info on this
+- It is possible that the antivirus might block the installation, so you can make it to allow it, as it is safe as evident from the scan results in [Privacy & Concern](#privacy--concern)
+- Now run `vx.x.x_Windows.exe` , (It is preferable if u open a terminal there and through that run ./vx.x.x_Windows.exe)
+- The shortcut of the application will be created on Desktop, you will also see a folder shortcut TorrentLAN, inside this folder go to Normal folder, there u can see the contents uploaded and downloaded by you
 
 ### Linux
 
