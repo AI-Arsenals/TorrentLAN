@@ -40,11 +40,11 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "electron:build": "npm run build && electron-builder -c.extraMetadata.main=build/electron.js",
-    "build-win": "npm run build && electron-builder --win -c.extraMetadata.main=build/electron.js"
+    "build-win": "electron-builder --win"
   },
   "build": {
     "win": {
-      "icon": "build/favicon.ico"
+      "icon": "build/Logo.png"
     }
   },
   "eslintConfig": {

@@ -9,12 +9,18 @@ import sys
 import select
 import psutil
 from sqlalchemy import text as sanitize
+import importlib.util as import_util
 
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), '..', '..')))
 from utils.log.main import log
 from utils.tracker.shared_util.intranet_ips_grabber import get_intranet_ips
+module_path = "utils/tracker/client_ip_reg(c-s).py"
+spec = import_util.spec_from_file_location("", module_path)
+module = import_util.module_from_spec(spec)
+spec.loader.exec_module(module)
+update_server_with_ip = getattr(module, "update")
 
 LIVE_IP_CHECK_CONFIG= "configs/live_ip_check_config.json"
 SPEED_TEST_DATA_SIZE = json.load(open(LIVE_IP_CHECK_CONFIG))["speed_test_data_size"]
@@ -152,35 +158,47 @@ def handle_client(conn, addr):
 
 
 def start_server():
-    current_pid=os.getpid()
+    # current_pid=os.getpid()
 
-    if os.path.exists(FILE_TRANSFER_NODE_CONFIG):
-        last_hosts=json.loads(open(FILE_TRANSFER_NODE_CONFIG).read())["last_hosts"]
-        if last_hosts==HOST:
-            EXISTING_PROCESS=False
-            for proc in psutil.process_iter():
-                try:
-                    if (proc.pid != current_pid) and ((("python" in proc.name()))or("python3" in proc.name())) and "utils/file_transfer/node.py" in proc.cmdline():
-                        EXISTING_PROCESS=True
-                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                    pass
-            if EXISTING_PROCESS:
-                log("Server already running with no network adapter ip changes")
-                return
-        else:
-            open(FILE_TRANSFER_NODE_CONFIG,"w").write(json.dumps({"last_hosts":HOST}))
+    # if os.path.exists(FILE_TRANSFER_NODE_CONFIG):
+    #     last_hosts=json.loads(open(FILE_TRANSFER_NODE_CONFIG).read())["last_hosts"]
+    #     if last_hosts==HOST:
+    #         EXISTING_PROCESS=False
+    #         for proc in psutil.process_iter():
+    #             try:
+    #                 if (proc.pid != current_pid) and ((("python" in proc.name()))or("python3" in proc.name())) and "utils/file_transfer/node.py" in proc.cmdline():
+    #                     EXISTING_PROCESS=True
+    #             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+    #                 pass
+    #         if EXISTING_PROCESS:
+    #             log("Server already running with no network adapter ip changes")
+    #             return
+    #     else:
+    #         open(FILE_TRANSFER_NODE_CONFIG,"w").write(json.dumps({"last_hosts":HOST}))
 
-    if not os.path.exists(FILE_TRANSFER_NODE_CONFIG):
-        open(FILE_TRANSFER_NODE_CONFIG,"w").write(json.dumps({"last_hosts":HOST}))
+    # if not os.path.exists(FILE_TRANSFER_NODE_CONFIG):
+    #     open(FILE_TRANSFER_NODE_CONFIG,"w").write(json.dumps({"last_hosts":HOST}))
 
     # Check if the node is already running and terminate it
-    for proc in psutil.process_iter():
-        try:
-            if (proc.pid != current_pid) and (("python" in proc.name())or("python3" in proc.name())) and "utils/file_transfer/node.py" in proc.cmdline():
-                proc.terminate()
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
+    # for proc in psutil.process_iter():
+    #     try:
+    #         if (proc.pid != current_pid) and (("python" in proc.name())or("python3" in proc.name())) and "utils/file_transfer/node.py" in proc.cmdline():
+    #             proc.terminate()
+    #     except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+    #         pass
+    
+    def network_change_checker():
+        while True:
+            time.sleep(300)
 
+
+            if get_intranet_ips()!=HOST:
+                # update server with ip
+                update_server_with_ip()
+                log("Network adapter ip change detected, restarting node server")
+                os.execl(sys.executable, sys.executable, *sys.argv)
+
+    threading.Thread(target=network_change_checker).start()
     sockets = []
     for host in HOST:
         try:
@@ -196,8 +214,11 @@ def start_server():
     while True:
         readable, _, _ = select.select(sockets, [], [])
         for sock in readable:
-            conn, addr = sock.accept()
-            threading.Thread(target=handle_client, args=(conn, addr)).start()
+            try:
+                conn, addr = sock.accept()
+                threading.Thread(target=handle_client, args=(conn, addr)).start()
+            except Exception as e:
+                log("Error accepting connection: " + str(e),severity_no=2,file_name=NODE_file_transfer_log)
 
 if __name__ == '__main__':
     start_server()

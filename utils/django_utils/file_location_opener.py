@@ -1,7 +1,8 @@
 import subprocess
 import os
 import platform
-import time
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 from utils.log.main import log
 
 def open_file_location(file_location,BASE_DIR):
@@ -33,3 +34,6 @@ def open_file_location(file_location,BASE_DIR):
     else:
         os.startfile(file_location)
     return True
+
+if __name__=='__main__':
+    open_file_location(r'data/Normal/College/AI_2025/WIN_20230823_17_32_29_Pro.jpg',r'C:\\Users\\prakh\\AppData\\Local\\TorrentLAN')

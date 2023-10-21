@@ -47,6 +47,16 @@ pyinstaller --onefile `
 
 ```
 
+## Electron
+
+Use one time only below command
+
+``` powershell
+npm run electron:build
+```
+
+then always use below command
+
 ```powershell
 electron-packager . --out=pack/ --overwrite --ignore="(.git|.vscode|node_modules|src|.gitignore|README.md|LICENSE.md)" --asar
 ```

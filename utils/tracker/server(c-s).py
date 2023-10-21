@@ -178,8 +178,11 @@ def start_server():
     while True:
         readable, _, _ = select.select(sockets, [], [])
         for sock in readable:
-            conn, addr = sock.accept()
-            threading.Thread(target=handle_client, args=(conn, addr)).start()
+            try:
+                conn, addr = sock.accept()
+                threading.Thread(target=handle_client, args=(conn, addr)).start()
+            except Exception as e:
+                log("Error accepting connection: " + str(e),severity_no=2,file_name=SERVER_LOGS)
 
 if __name__ == '__main__':
     start_server()

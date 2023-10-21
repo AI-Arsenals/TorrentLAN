@@ -144,46 +144,19 @@ class INSTALL:
             os.makedirs(daemons_folder_path, exist_ok=True)
 
             # Create a vbs script to run the daemon script
-            vbs_file_path = os.path.join(daemons_folder_path, "TorrentLAN - (Run on Startup) - " + str(file_loc).replace("\\", "_").replace("\\", "_")+".vbs")
+            vbs_file_path = os.path.join(daemons_folder_path, "TorrentLAN - (Startup Daemon) - " + str(file_loc).replace("\\", "_")+".vbs")
             with open(vbs_file_path, 'w') as f:
                 f.write('Set objShell = CreateObject("WScript.Shell")\n')
                 f.write(f'objShell.CurrentDirectory = "{BASE_DIR}"\n')
                 f.write(f'objShell.Run "pythonw {file_loc}", 0, False\n')
                 
 
-            # Task Scheduler object
-            scheduler = win32com.client.Dispatch("Schedule.Service")
-            scheduler.Connect()
-
-            # Get root folder of the Task Scheduler
-            root_folder = scheduler.GetFolder("\\")
-
-            # Create a new folder for TorrentLAN if it doesn't exist
-            daemon_folder_name = "TorrentLAN"
-            daemon_folder_path = "\\" + daemon_folder_name
-            try:
-                daemon_folder = root_folder.GetFolder(daemon_folder_path)
-            except:
-                daemon_folder = root_folder.CreateFolder(daemon_folder_path)
-
-            # Task to run on startup
-            task_startup = scheduler.NewTask(0)
-            task_startup.RegistrationInfo.Description = "TorrentLAN_(Run on Startup)_"
-            task_startup.Settings.Enabled = True
-            task_startup.Settings.StartWhenAvailable = True
-
-            # Trigger to run on startup
-            trigger_startup = task_startup.Triggers.Create(9)  # 9 represents "On startup" trigger
-            trigger_startup.Id = "TorrentLAN_(Startup Trigger_" + str(file_loc).replace("\\", "_")
-
-            # Run the vbs file
-            action_startup = task_startup.Actions.Create(0)  # 0 represents "Execute" action
-            action_startup.Path = "wscript.exe"
-            action_startup.Arguments = f'"{vbs_file_path}"'
-
-            # Register the task in the daemon folder
-            daemon_folder.RegisterTaskDefinition(str("TorrentLAN - (Daemon - Startup) - " + str(file_loc).replace("\\", "_")),
-                                                task_startup, 6, "", "", 3)
+            # Create a scheduled task using New-ScheduledTaskSettingsSet to run the vbs file on startup
+            task_name = ("TorrentLAN_Startup_Daemon_" + str(file_loc)).replace("\\",  "_")
+            task_settings_command = f'New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries'
+            start_trigger_command = 'New-ScheduledTaskTrigger -AtLogOn'
+            task_command = f'Register-ScheduledTask -TaskName "\\TorrentLAN\\{task_name}" -Action (New-ScheduledTaskAction -Execute "{vbs_file_path}") -Trigger ({start_trigger_command}) -Settings ({task_settings_command})'
+            subprocess.run(['powershell', '-Command', task_command], shell=True)
 
             print(f"Created startup daemon for {file_loc}")
 
@@ -203,10 +176,12 @@ class INSTALL:
                 f.write(f'objShell.CurrentDirectory = "{BASE_DIR}"\n')
                 f.write(f'objShell.Run "pythonw {file_loc}", 0, False\n')
 
-            # Create a scheduled task to run the vbs file every 5 minutes
-            task_name = "TorrentLAN - (Time Daemon) - " + str(file_loc).replace("\\",  "_")
-            task_command = f'schtasks /create /tn "\\TorrentLAN\\{task_name}" /tr "wscript.exe \\"{vbs_file_path}\\"" /sc minute /mo {recur_time_min} /F'
-            subprocess.run(task_command, shell=True)
+            # Create a scheduled task to run the vbs file every recur_time_min minutes
+            task_name = ("TorrentLAN_Time_Daemon_" + str(file_loc)).replace("\\",  "_")
+            task_settings_command = f'New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries'
+            start_trigger_command = f'New-ScheduledTaskTrigger -once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes {recur_time_min})'
+            task_command = f'Register-ScheduledTask -TaskName "\\TorrentLAN\\{task_name}" -Action (New-ScheduledTaskAction -Execute "{vbs_file_path}") -Trigger ({start_trigger_command}) -Settings ({task_settings_command})'
+            subprocess.run(['powershell', '-Command', task_command], shell=True)
             
             print(f"Created Time daemon for {file_loc}")
 
@@ -658,11 +633,11 @@ class INSTALL:
                     INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "data"), os.path.join(path,"Desktop"), "TorrentLAN")
                     INSTALL.WINDOWS.create_shortcut(os.path.join(INSTALL.BASE_DIR, "torrentlan_launcher","torrentlan_start.exe"), os.path.join(path,"Desktop"), "TorrentLAN.exe","./docs/Logo/Icon.ico")
                     INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "file_transfer", "node.py"))
-                    INSTALL.WINDOWS.daemon_time(os.path.join("utils", "file_transfer", "node.py"),5)
-                    INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"))
-                    INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"),5)
                     INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client(c-s).py"),60*6)
 
+                    # INSTALL.WINDOWS.daemon_startup(os.path.join("utils", "tracker", "client_ip_reg(c-s).py")) handled from node.py itself
+                    # INSTALL.WINDOWS.daemon_time(os.path.join("utils", "tracker", "client_ip_reg(c-s).py"),5) handled from node.py itself
+                    
                     print("Data of TorrentLAN is stored in the Documents folder, and TorrentLAN can be started from the desktop shortcut")
                     print("If prompt of a firewall appear then allow it(you can read about it in privacy & conncern of TorrentLAN in github)")
                     command=sys.executable + "utils/file_transfer/node.py"
