@@ -65,6 +65,12 @@ class DebugModule:
             print(colored(f"Error: Unable to read file: {self.file_path}", 'red'))
 
 def log(msg, severity_no=0, *args,file_name='log.txt'):
+    severities = {0: "INFO", 1: "WARNING", 2: "ERROR"}
+    severity = severities.get(severity_no, "INFO")
+
+    color_map = {0: 'green', 1: 'yellow', 2: 'red'}
+    color = color_map.get(severity_no, 'white')
+
     logger = DebugModule(file_name)
     calling_script_path = os.path.abspath(sys.argv[0])
     root_dir_index = calling_script_path.find("TorrentLAN")
@@ -74,6 +80,10 @@ def log(msg, severity_no=0, *args,file_name='log.txt'):
     else:
         calling_script_name = calling_script_path
         
+    log_message = f"[{calling_script_name}] [{severity}] {msg}"
+    print(colored(log_message, color))
+    return
+    # Too much log overhead need to fix it
     logger.log_message(msg, severity_no, calling_script_name)
 
 def show_logs():
