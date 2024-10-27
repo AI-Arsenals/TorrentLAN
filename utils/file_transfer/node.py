@@ -12,8 +12,7 @@ from sqlalchemy import text as sanitize
 import importlib.util as import_util
 
 
-sys.path.append(os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 from utils.log.main import log
 from utils.tracker.shared_util.intranet_ips_grabber import get_intranet_ips
 module_path = "utils/tracker/client_ip_reg(c-s).py"

@@ -85,3 +85,9 @@
 - TorrentLAN uses server-client tracker model, So u must setup a computer which will act as a tracker server
 - In the server you should run `./utils/tracker/server(c-s).py`
 - For the clients, change the 'server_addr' to your server address inside `./configs/server.json`
+
+## Screenshots
+
+![dashboard](image.png)
+
+![download page](image-1.png)
