@@ -88,6 +88,8 @@
 
 ## Screenshots
 
-![dashboard](image.png)
+### Dashboard
+![dashboard](./docs/README/Screenshot-1.png)
 
-![download page](image-1.png)
+### Download Page
+![download page](./docs/README/Screenshot-2.png)
